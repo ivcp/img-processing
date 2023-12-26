@@ -1,8 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/ivcp/polls/internal/data"
 )
 
 func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) {
@@ -11,5 +13,23 @@ func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) 
 		http.NotFound(w, r)
 		return
 	}
-	fmt.Fprintf(w, "show the details of poll %d\n", id)
+
+	poll := data.Poll{
+		ID:       id,
+		Question: "Test question?",
+		Options: data.PollOptions{
+			{ID: 1, Value: "One", Position: 0},
+			{ID: 2, Value: "Two", Position: 1},
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(12 * time.Hour),
+		Version:   1,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, poll, nil)
+	if err != nil {
+		app.logger.Print(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+	}
 }
