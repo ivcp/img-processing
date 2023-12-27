@@ -28,3 +28,7 @@ func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request)
 	message := "the requested resource could not be found"
 	app.errorJSONResponse(w, r, http.StatusNotFound, message)
 }
+
+func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.errorJSONResponse(w, r, http.StatusBadRequest, err.Error())
+}
