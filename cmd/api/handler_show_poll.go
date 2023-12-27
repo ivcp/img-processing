@@ -10,7 +10,7 @@ import (
 func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		http.NotFound(w, r)
+		app.notFoundResponse(w, r)
 		return
 	}
 
@@ -29,7 +29,6 @@ func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) 
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"poll": poll}, nil)
 	if err != nil {
-		app.logger.Print(err)
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		app.serverErrorResponse(w, r, err)
 	}
 }
