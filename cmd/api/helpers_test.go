@@ -47,7 +47,7 @@ func Test_app_writeJSON(t *testing.T) {
 
 	for _, test := range tests {
 		rr := httptest.NewRecorder()
-		err := app.writeJSON(rr, http.StatusOK, test.data, nil)
+		err := app.writeJSON(rr, http.StatusOK, envelope{"data": test.data}, nil)
 		if !test.expectError && err != nil {
 			t.Errorf("%s: expected no err, but got one: %q", test.name, err)
 		}

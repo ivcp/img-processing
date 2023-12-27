@@ -27,7 +27,7 @@ func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) 
 		Version:   1,
 	}
 
-	err = app.writeJSON(w, http.StatusOK, poll, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"poll": poll}, nil)
 	if err != nil {
 		app.logger.Print(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
