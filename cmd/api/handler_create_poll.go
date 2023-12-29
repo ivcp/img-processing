@@ -14,7 +14,7 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		ExpiresAt   time.Time `json:"expires_at"`
 	}
 
-	err := app.readJSON(r, &input)
+	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
