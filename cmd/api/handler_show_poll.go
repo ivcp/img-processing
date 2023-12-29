@@ -17,7 +17,7 @@ func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) 
 	poll := data.Poll{
 		ID:       id,
 		Question: "Test question?",
-		Options: data.PollOptions{
+		Options: []data.PollOption{
 			{ID: 1, Value: "One", Position: 0},
 			{ID: 2, Value: "Two", Position: 1},
 		},
