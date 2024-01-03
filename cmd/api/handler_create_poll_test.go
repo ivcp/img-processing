@@ -98,6 +98,16 @@ func Test_app_createPollHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"error":"body contains incorrect JSON type for field \"question\""}` + "\n",
 		},
+		{
+			name: "insert poll valid",
+			json: input{
+				Question:   "test?",
+				Options:    []string{"test"},
+				Expires_at: expiresValid,
+			},
+			expectedStatus: http.StatusCreated,
+			expectedBody:   "",
+		},
 	}
 
 	for _, test := range tests {
@@ -109,7 +119,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			if rr.Code != test.expectedStatus {
 				t.Errorf("expected status %d, but got %d", test.expectedStatus, rr.Code)
 			}
-			if rr.Body.String() != test.expectedBody {
+			if test.expectedBody != "" && rr.Body.String() != test.expectedBody {
 				t.Errorf("expected body %q, but got %q", test.expectedBody, rr.Body)
 			}
 		})
