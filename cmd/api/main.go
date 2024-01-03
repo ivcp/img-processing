@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ivcp/polls/internal/data"
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -25,10 +26,12 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func main() {
 	var cfg config
+	var app application
 	flag.IntVar(&cfg.port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(
@@ -40,16 +43,15 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	app := &application{
-		config: cfg,
-		logger: logger,
-	}
+	app.config = cfg
+	app.logger = logger
 
 	db, err := app.connectToDB()
 	if err != nil {
 		logger.Fatal(err)
 	}
 	defer db.Close()
+	app.models = data.NewModels(db)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
