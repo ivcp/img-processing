@@ -33,7 +33,11 @@ func ValidatePoll(v *validator.Validator, poll *Poll) {
 	v.Check(len(poll.Description) <= 1000, "description", "must not be more than 1000 bytes long")
 	v.Check(poll.Options != nil, "options", "must be provided")
 	v.Check(len(poll.Options) >= 1, "options", "must contain at least one option")
-	v.Check(validator.Unique(poll.Options), "options", "must not contain duplicate values")
+	var options []string
+	for _, opt := range poll.Options {
+		options = append(options, opt.Value)
+	}
+	v.Check(validator.Unique(options), "options", "must not contain duplicate values")
 	v.Check(!poll.ExpiresAt.IsZero(), "expires_at", "must be provided")
 	v.Check(poll.ExpiresAt.After(time.Now().Add(time.Minute)), "expires_at", "must be more than a minute in the future")
 }
