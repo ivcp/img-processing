@@ -24,8 +24,8 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	options := []data.PollOption{}
-	for _, option := range input.Options {
-		options = append(options, data.PollOption{Value: option})
+	for i, option := range input.Options {
+		options = append(options, data.PollOption{Value: option, Position: i})
 	}
 
 	poll := &data.Poll{
@@ -41,5 +41,17 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	err = app.models.Polls.Insert(poll)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/polls/%d", poll.ID))
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"poll": poll}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
