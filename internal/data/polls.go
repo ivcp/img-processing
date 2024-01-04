@@ -2,21 +2,24 @@ package data
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ivcp/polls/internal/validator"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Poll struct {
-	ID          int          `json:"id"`
-	Question    string       `json:"question"`
-	Description string       `json:"description"`
-	Options     []PollOption `json:"options"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
-	ExpiresAt   time.Time    `json:"expires_at"`
-	Version     int          `json:"version"`
+	ID          int           `json:"id"`
+	Question    string        `json:"question"`
+	Description string        `json:"description"`
+	Options     []*PollOption `json:"options"`
+	CreatedAt   time.Time     `json:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at"`
+	ExpiresAt   time.Time     `json:"expires_at"`
+	Version     int           `json:"version"`
 }
 
 type PollOption struct {
@@ -79,7 +82,66 @@ func (p PollModel) Insert(poll *Poll) error {
 }
 
 func (p PollModel) Get(id int) (*Poll, error) {
-	return nil, nil
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	queryPoll := `
+		SELECT id, question, description, created_at, 
+		updated_at, expires_at, version		
+		FROM polls 	
+		WHERE id = $1;
+	`
+	queryOption := `
+		SELECT id, value, position, vote_count
+		FROM poll_options 
+		WHERE poll_id = $1;
+	`
+	var poll Poll
+
+	err := p.DB.QueryRow(context.Background(), queryPoll, id).Scan(
+		&poll.ID,
+		&poll.Question,
+		&poll.Description,
+		&poll.CreatedAt,
+		&poll.UpdatedAt,
+		&poll.ExpiresAt,
+		&poll.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, fmt.Errorf("get poll: %w", err)
+		}
+	}
+
+	var options []*PollOption
+
+	rows, err := p.DB.Query(context.Background(), queryOption, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var pollOption PollOption
+		err := rows.Scan(
+			&pollOption.ID,
+			&pollOption.Value,
+			&pollOption.Position,
+			&pollOption.VoteCount,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("get poll option: %w", err)
+		}
+		options = append(options, &pollOption)
+	}
+
+	poll.Options = options
+
+	return &poll, nil
 }
 
 func (p PollModel) Update(poll *Poll) error {
@@ -100,7 +162,19 @@ func (p MockPollModel) Insert(poll *Poll) error {
 }
 
 func (p MockPollModel) Get(id int) (*Poll, error) {
-	return nil, nil
+	if id == 1 {
+		poll := Poll{
+			ID:        1,
+			Question:  "Test?",
+			Options:   []*PollOption{{ID: 1, Value: "Yes", Position: 0, VoteCount: 0}},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			ExpiresAt: time.Now(),
+			Version:   1,
+		}
+		return &poll, nil
+	}
+	return nil, ErrRecordNotFound
 }
 
 func (p MockPollModel) Update(poll *Poll) error {
