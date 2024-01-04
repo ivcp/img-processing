@@ -36,11 +36,18 @@ func ValidatePoll(v *validator.Validator, poll *Poll) {
 	v.Check(len(poll.Description) <= 1000, "description", "must not be more than 1000 bytes long")
 	v.Check(poll.Options != nil, "options", "must be provided")
 	v.Check(len(poll.Options) >= 1, "options", "must contain at least one option")
-	var options []string
+	var optValues []string
+	var optPositions []int
 	for _, opt := range poll.Options {
-		options = append(options, opt.Value)
+		optValues = append(optValues, opt.Value)
+		optPositions = append(optPositions, opt.Position)
 	}
-	v.Check(validator.Unique(options), "options", "must not contain duplicate values")
+	v.Check(validator.Unique(optValues), "options", "must not contain duplicate values")
+	v.Check(validator.Unique(optPositions), "options", "positions must be unique")
+	for _, p := range optPositions {
+		v.Check(p >= 0, "options", "position must be greater or equal to 0")
+		v.Check(p <= len(poll.Options)-1, "options", "position must not excede the number of options")
+	}
 	v.Check(!poll.ExpiresAt.IsZero(), "expires_at", "must be provided")
 	v.Check(poll.ExpiresAt.After(time.Now().Add(time.Minute)), "expires_at", "must be more than a minute in the future")
 }
@@ -145,7 +152,48 @@ func (p PollModel) Get(id int) (*Poll, error) {
 }
 
 func (p PollModel) Update(poll *Poll) error {
-	return nil
+	queryPoll := `
+		UPDATE polls
+		SET question = $1, description = $2, expires_at = $3, version = version + 1
+		WHERE id = $4
+		RETURNING version;
+	`
+	queryUpdateOption := `
+		UPDATE poll_options
+		SET value = $1, position = $2
+		WHERE id = $3;
+	`
+	queryInsertOption := `
+		INSERT INTO poll_options (value, poll_id, position, vote_count)
+		VALUES ($1, $2, $3, $4)		
+		RETURNING id;
+	`
+
+	for i, option := range poll.Options {
+		if option.ID == 0 {
+			args := []any{option.Value, poll.ID, option.Position, option.VoteCount}
+			err := p.DB.QueryRow(
+				context.Background(), queryInsertOption, args...,
+			).Scan(&poll.Options[i].ID)
+			if err != nil {
+				return err
+			}
+
+		} else {
+			_, err := p.DB.Exec(context.Background(), queryUpdateOption, option.Value, option.Position, option.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	args := []any{
+		poll.Question,
+		poll.Description,
+		poll.ExpiresAt,
+		poll.ID,
+	}
+	return p.DB.QueryRow(context.Background(), queryPoll, args...).Scan(&poll.Version)
 }
 
 func (p PollModel) Delete(id int) error {
