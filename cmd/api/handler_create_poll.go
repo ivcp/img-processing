@@ -11,10 +11,13 @@ import (
 
 func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Question    string    `json:"question"`
-		Description string    `json:"description"`
-		Options     []string  `json:"options"`
-		ExpiresAt   time.Time `json:"expires_at"`
+		Question    string `json:"question"`
+		Description string `json:"description"`
+		Options     []struct {
+			Value    string `json:"value"`
+			Position int    `json:"position"`
+		} `json:"options"`
+		ExpiresAt time.Time `json:"expires_at"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -24,8 +27,8 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	options := []*data.PollOption{}
-	for i, option := range input.Options {
-		options = append(options, &data.PollOption{Value: option, Position: i})
+	for _, option := range input.Options {
+		options = append(options, &data.PollOption{Value: option.Value, Position: option.Position})
 	}
 
 	poll := &data.Poll{
