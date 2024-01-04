@@ -16,12 +16,17 @@ func Test_app_createPollHandler(t *testing.T) {
 	questionInvalid := strings.Repeat("a", 501)
 	descriptionInvalid := strings.Repeat("a", 1001)
 
-	type input struct {
-		Question    any `json:"question"`
-		Description any `json:"description"`
-		Options     any `json:"options"`
-		Expires_at  any `json:"expires_at"`
+	type opts struct {
+		Value    any `json:"value"`
+		Position any `json:"position"`
 	}
+	type input struct {
+		Question    any    `json:"question"`
+		Description any    `json:"description"`
+		Options     []opts `json:"options"`
+		Expires_at  any    `json:"expires_at"`
+	}
+
 	tests := []struct {
 		name           string
 		json           any
@@ -31,8 +36,10 @@ func Test_app_createPollHandler(t *testing.T) {
 		{
 			name: "epmty question",
 			json: input{
-				Question:   "",
-				Options:    []string{"test"},
+				Question: "",
+				Options: []opts{
+					{"test", 0},
+				},
 				Expires_at: expiresValid,
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
@@ -42,7 +49,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			name: "question too long",
 			json: input{
 				Question:   questionInvalid,
-				Options:    []string{"test"},
+				Options:    []opts{{"test", 0}},
 				Expires_at: expiresValid,
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
@@ -53,7 +60,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			json: input{
 				Question:    "test?",
 				Description: descriptionInvalid,
-				Options:     []string{"test"},
+				Options:     []opts{{"test", 0}},
 				Expires_at:  expiresValid,
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
@@ -63,7 +70,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			name: "expires_at missing",
 			json: input{
 				Question: "test?",
-				Options:  []string{"test"},
+				Options:  []opts{{"test", 0}},
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   `{"error":{"expires_at":"must be provided"}}` + "\n",
@@ -72,7 +79,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			name: "expires_at invalid",
 			json: input{
 				Question:   "test?",
-				Options:    []string{"test"},
+				Options:    []opts{{"test", 0}},
 				Expires_at: expiresInvalid,
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
@@ -82,17 +89,47 @@ func Test_app_createPollHandler(t *testing.T) {
 			name: "duplicate options",
 			json: input{
 				Question:   "test?",
-				Options:    []string{"test", "test"},
+				Options:    []opts{{"test", 0}, {"test", 0}},
 				Expires_at: expiresValid,
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   `{"error":{"options":"must not contain duplicate values"}}` + "\n",
 		},
 		{
+			name: "duplicate option positions",
+			json: input{
+				Question:   "test?",
+				Options:    []opts{{"test", 0}, {"test2", 0}},
+				Expires_at: expiresValid,
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   `{"error":{"options":"positions must be unique"}}` + "\n",
+		},
+		{
+			name: "invalid option positions",
+			json: input{
+				Question:   "test?",
+				Options:    []opts{{"test", 2}, {"test2", 0}},
+				Expires_at: expiresValid,
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   `{"error":{"options":"position must not excede the number of options"}}` + "\n",
+		},
+		{
+			name: "invalid option positions",
+			json: input{
+				Question:   "test?",
+				Options:    []opts{{"test", -1}, {"test2", -2}},
+				Expires_at: expiresValid,
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   `{"error":{"options":"position must be greater or equal to 0"}}` + "\n",
+		},
+		{
 			name: "invalid json field",
 			json: input{
 				Question:   1,
-				Options:    []string{"test"},
+				Options:    []opts{{"test", 0}},
 				Expires_at: expiresValid,
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -102,7 +139,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			name: "insert poll valid",
 			json: input{
 				Question:   "test?",
-				Options:    []string{"test"},
+				Options:    []opts{{"test", 0}},
 				Expires_at: expiresValid,
 			},
 			expectedStatus: http.StatusCreated,
@@ -122,6 +159,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			if test.expectedBody != "" && rr.Body.String() != test.expectedBody {
 				t.Errorf("expected body %q, but got %q", test.expectedBody, rr.Body)
 			}
+			t.Log(rr.Body)
 		})
 	}
 }
