@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"net/http"
-	"time"
 
 	"github.com/ivcp/polls/internal/data"
 )
@@ -10,21 +10,19 @@ import (
 func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	poll := data.Poll{
-		ID:       id,
-		Question: "Test question?",
-		Options: []data.PollOption{
-			{ID: 1, Value: "One", Position: 0},
-			{ID: 2, Value: "Two", Position: 1},
-		},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(12 * time.Hour),
-		Version:   1,
+	poll, err := app.models.Polls.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"poll": poll}, nil)
