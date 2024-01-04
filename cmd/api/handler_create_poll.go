@@ -23,9 +23,9 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	options := []data.PollOption{}
+	options := []*data.PollOption{}
 	for i, option := range input.Options {
-		options = append(options, data.PollOption{Value: option, Position: i})
+		options = append(options, &data.PollOption{Value: option, Position: i})
 	}
 
 	poll := &data.Poll{
