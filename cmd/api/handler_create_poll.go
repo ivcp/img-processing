@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
@@ -17,7 +16,7 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 			Value    string `json:"value"`
 			Position int    `json:"position"`
 		} `json:"options"`
-		ExpiresAt time.Time `json:"expires_at"`
+		ExpiresAt data.ExpiresAt `json:"expires_at"`
 	}
 
 	err := app.readJSON(w, r, &input)
