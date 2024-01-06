@@ -132,6 +132,18 @@ func Test_app_createPollHandler(t *testing.T) {
 			expectedBody:   `{"error":{"options":"option values must not be empty"}}`,
 		},
 		{
+			name: "option value too large",
+			json: fmt.Sprintf(
+				`{
+					"question":"Test?", 
+					"options":[{"value":%q,"position":0},{"value":"second","position":1}]				
+					}`,
+				questionInvalid,
+			),
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   `{"error":{"options":"must not be more than 500 bytes long"}}`,
+		},
+		{
 			name: "invalid json field type",
 			json: `{
 				"question":1, 
@@ -153,7 +165,6 @@ func Test_app_createPollHandler(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 			expectedBody:   `{"poll":{"id":1,"question":"Test?"`,
 		},
-		// ADD location header test
 	}
 
 	for _, test := range tests {
