@@ -25,6 +25,14 @@ func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	pollOptions, err := app.models.PollOptions.GetAllByPollID(poll.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	poll.Options = pollOptions
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"poll": poll}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
