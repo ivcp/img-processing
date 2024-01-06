@@ -236,5 +236,8 @@ func (p MockPollModel) Update(poll *Poll) error {
 }
 
 func (p MockPollModel) Delete(id int) error {
-	return nil
+	if id == 1 {
+		return nil
+	}
+	return ErrRecordNotFound
 }
