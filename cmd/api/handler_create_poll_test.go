@@ -25,7 +25,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			name:           "epmty question",
 			json:           `{"question":"", "options":[{"value":"first","position":0}]}`,
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"question":"must not be empty"}}` + "\n",
+			expectedBody:   `{"error":{"question":"must not be empty"}}`,
 		},
 		{
 			name: "question too long",
@@ -44,6 +44,13 @@ func Test_app_createPollHandler(t *testing.T) {
 			),
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   `{"error":{"description":"must not be more than 1000 bytes long"}}`,
+		},
+		{
+			name: "description provided but empty string",
+			json: `{"question":"Test?", "description":" ", "options":[{"value":"first","position":0}]}`,
+
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   `{"error":{"description":"must not be empty"}}`,
 		},
 		{
 			name: "expires_at invalid",
@@ -79,6 +86,12 @@ func Test_app_createPollHandler(t *testing.T) {
 			expectedBody:   `{"error":{"options":"position must be greater or equal to 0"}}`,
 		},
 		{
+			name:           "invalid empty option",
+			json:           `{"question":"Test?", "options":[{"value":" ","position":0}]}`,
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   `{"error":{"options":"option values must not be empty"}}`,
+		},
+		{
 			name:           "invalid json field type",
 			json:           `{"question":1, "options":[{"value":"first","position":0}]}`,
 			expectedStatus: http.StatusBadRequest,
@@ -87,7 +100,7 @@ func Test_app_createPollHandler(t *testing.T) {
 		{
 			name: "insert poll valid",
 			json: fmt.Sprintf(
-				`{"question":"Test?", "options":[{"value":"first","position":0}],"expires_at":%q}`,
+				`{"question":"Test?", "options":[{"value":"first", "position":0}],"expires_at":%q}`,
 				expiresValid,
 			),
 			expectedStatus: http.StatusCreated,
