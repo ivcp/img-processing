@@ -18,7 +18,7 @@ type Poll struct {
 	Options     []*PollOption `json:"options"`
 	CreatedAt   time.Time     `json:"created_at"`
 	UpdatedAt   time.Time     `json:"updated_at"`
-	ExpiresAt   time.Time     `json:"expires_at"`
+	ExpiresAt   ExpiresAt     `json:"expires_at"`
 	Version     int           `json:"version"`
 }
 
@@ -48,8 +48,9 @@ func ValidatePoll(v *validator.Validator, poll *Poll) {
 		v.Check(p >= 0, "options", "position must be greater or equal to 0")
 		v.Check(p <= len(poll.Options)-1, "options", "position must not excede the number of options")
 	}
-	v.Check(!poll.ExpiresAt.IsZero(), "expires_at", "must be provided")
-	v.Check(poll.ExpiresAt.After(time.Now().Add(time.Minute)), "expires_at", "must be more than a minute in the future")
+	if !poll.ExpiresAt.IsZero() {
+		v.Check(poll.ExpiresAt.After(time.Now().Add(time.Minute)), "expires_at", "must be more than a minute in the future")
+	}
 }
 
 type PollModel struct {
@@ -69,7 +70,7 @@ func (p PollModel) Insert(poll *Poll) error {
 		RETURNING id;
 	`
 
-	args := []any{poll.Question, poll.Description, poll.ExpiresAt}
+	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time}
 
 	err := p.DB.QueryRow(
 		context.Background(), queryPoll, args...,
@@ -112,7 +113,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		&poll.Description,
 		&poll.CreatedAt,
 		&poll.UpdatedAt,
-		&poll.ExpiresAt,
+		&poll.ExpiresAt.Time,
 		&poll.Version,
 	)
 	if err != nil {
@@ -158,39 +159,11 @@ func (p PollModel) Update(poll *Poll) error {
 		WHERE id = $4
 		RETURNING version;
 	`
-	queryUpdateOption := `
-		UPDATE poll_options
-		SET value = $1, position = $2
-		WHERE id = $3;
-	`
-	queryInsertOption := `
-		INSERT INTO poll_options (value, poll_id, position, vote_count)
-		VALUES ($1, $2, $3, $4)		
-		RETURNING id;
-	`
-
-	for i, option := range poll.Options {
-		if option.ID == 0 {
-			args := []any{option.Value, poll.ID, option.Position, option.VoteCount}
-			err := p.DB.QueryRow(
-				context.Background(), queryInsertOption, args...,
-			).Scan(&poll.Options[i].ID)
-			if err != nil {
-				return err
-			}
-
-		} else {
-			_, err := p.DB.Exec(context.Background(), queryUpdateOption, option.Value, option.Position, option.ID)
-			if err != nil {
-				return err
-			}
-		}
-	}
 
 	args := []any{
 		poll.Question,
 		poll.Description,
-		poll.ExpiresAt,
+		poll.ExpiresAt.Time,
 		poll.ID,
 	}
 	return p.DB.QueryRow(context.Background(), queryPoll, args...).Scan(&poll.Version)
@@ -206,6 +179,7 @@ type MockPollModel struct {
 }
 
 func (p MockPollModel) Insert(poll *Poll) error {
+	poll.ID = 1
 	return nil
 }
 
@@ -217,7 +191,7 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 			Options:   []*PollOption{{ID: 1, Value: "Yes", Position: 0, VoteCount: 0}},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
-			ExpiresAt: time.Now(),
+			ExpiresAt: ExpiresAt{time.Now().Add(2 * time.Minute)},
 			Version:   1,
 		}
 		return &poll, nil
@@ -226,7 +200,10 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 }
 
 func (p MockPollModel) Update(poll *Poll) error {
-	return nil
+	if poll.ID == 1 {
+		return nil
+	}
+	return ErrRecordNotFound
 }
 
 func (p MockPollModel) Delete(id int) error {
