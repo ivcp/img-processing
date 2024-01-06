@@ -90,7 +90,7 @@ func (p PollModel) Insert(poll *Poll) error {
 			context.Background(), queryOption, args...,
 		).Scan(&poll.Options[i].ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("insert poll: %w", err)
 		}
 	}
 
@@ -137,7 +137,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 
 	rows, err := p.DB.Query(context.Background(), queryOption, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get poll: %w", err)
 	}
 	defer rows.Close()
 
@@ -178,6 +178,24 @@ func (p PollModel) Update(poll *Poll) error {
 }
 
 func (p PollModel) Delete(id int) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `
+		DELETE FROM polls
+		WHERE id = $1;
+	`
+
+	result, err := p.DB.Exec(context.Background(), query, id)
+	if err != nil {
+		return fmt.Errorf("delete poll: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrRecordNotFound
+	}
+
 	return nil
 }
 
