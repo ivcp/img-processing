@@ -106,7 +106,7 @@ func Test_app_createPollHandler(t *testing.T) {
 			if rr.Code != test.expectedStatus {
 				t.Errorf("expected status %d, but got %d", test.expectedStatus, rr.Code)
 			}
-			if test.expectedBody != "" && !strings.Contains(rr.Body.String(), test.expectedBody) {
+			if !strings.Contains(rr.Body.String(), test.expectedBody) {
 				t.Errorf("expected body %q, but got %q", test.expectedBody, rr.Body)
 			}
 		})
