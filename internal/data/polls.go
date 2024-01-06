@@ -50,6 +50,7 @@ func ValidatePoll(v *validator.Validator, poll *Poll) {
 	v.Check(validator.Unique(optPositions), "options", "positions must be unique")
 	for _, o := range optValues {
 		v.Check(strings.TrimSpace(o) != "", "options", "option values must not be empty")
+		v.Check(len(o) <= 500, "option", "must not be more than 500 bytes long")
 	}
 	for _, p := range optPositions {
 		v.Check(p >= 0, "options", "position must be greater or equal to 0")
