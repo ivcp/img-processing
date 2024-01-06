@@ -193,9 +193,12 @@ func (p MockPollModel) Insert(poll *Poll) error {
 func (p MockPollModel) Get(id int) (*Poll, error) {
 	if id == 1 {
 		poll := Poll{
-			ID:        1,
-			Question:  "Test?",
-			Options:   []*PollOption{{ID: 1, Value: "Yes", Position: 0, VoteCount: 0}},
+			ID:       1,
+			Question: "Test?",
+			Options: []*PollOption{
+				{ID: 1, Value: "Yes", Position: 0, VoteCount: 0},
+				{ID: 2, Value: "No", Position: 1, VoteCount: 0},
+			},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			ExpiresAt: ExpiresAt{time.Now().Add(2 * time.Minute)},
