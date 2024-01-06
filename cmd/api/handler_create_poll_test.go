@@ -34,7 +34,7 @@ func Test_app_createPollHandler(t *testing.T) {
 				questionInvalid,
 			),
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"question":"must not be more than 500 bytes long"}}` + "\n",
+			expectedBody:   `{"error":{"question":"must not be more than 500 bytes long"}}`,
 		},
 		{
 			name: "description too long",
@@ -43,7 +43,7 @@ func Test_app_createPollHandler(t *testing.T) {
 				descriptionInvalid,
 			),
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"description":"must not be more than 1000 bytes long"}}` + "\n",
+			expectedBody:   `{"error":{"description":"must not be more than 1000 bytes long"}}`,
 		},
 		{
 			name: "expires_at invalid",
@@ -52,37 +52,37 @@ func Test_app_createPollHandler(t *testing.T) {
 				expiresInvalid,
 			),
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"expires_at":"must be more than a minute in the future"}}` + "\n",
+			expectedBody:   `{"error":{"expires_at":"must be more than a minute in the future"}}`,
 		},
 		{
 			name:           "duplicate options",
 			json:           `{"question":"Test?", "options":[{"value":"first","position":0}, {"value":"first","position":1}]}`,
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"options":"must not contain duplicate values"}}` + "\n",
+			expectedBody:   `{"error":{"options":"must not contain duplicate values"}}`,
 		},
 		{
 			name:           "duplicate option positions",
 			json:           `{"question":"Test?", "options":[{"value":"first","position":0}, {"value":"second","position":0}]}`,
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"options":"positions must be unique"}}` + "\n",
+			expectedBody:   `{"error":{"options":"positions must be unique"}}`,
 		},
 		{
 			name:           "invalid option positions",
 			json:           `{"question":"Test?", "options":[{"value":"first","position":2}, {"value":"second","position":0}]}`,
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"options":"position must not excede the number of options"}}` + "\n",
+			expectedBody:   `{"error":{"options":"position must not excede the number of options"}}`,
 		},
 		{
 			name:           "invalid option positions",
 			json:           `{"question":"Test?", "options":[{"value":"first","position":-1}, {"value":"second","position":0}]}`,
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"options":"position must be greater or equal to 0"}}` + "\n",
+			expectedBody:   `{"error":{"options":"position must be greater or equal to 0"}}`,
 		},
 		{
 			name:           "invalid json field type",
 			json:           `{"question":1, "options":[{"value":"first","position":0}]}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"body contains incorrect JSON type for field \"question\""}` + "\n",
+			expectedBody:   `{"error":"body contains incorrect JSON type for field \"question\""}`,
 		},
 		{
 			name: "insert poll valid",
@@ -91,8 +91,10 @@ func Test_app_createPollHandler(t *testing.T) {
 				expiresValid,
 			),
 			expectedStatus: http.StatusCreated,
-			expectedBody:   "",
+			expectedBody:   `{"poll":{"id":1,"question":"Test?"`,
 		},
+		// ADD location header test
+		// Change minimum opts to 2
 	}
 
 	for _, test := range tests {
@@ -104,10 +106,9 @@ func Test_app_createPollHandler(t *testing.T) {
 			if rr.Code != test.expectedStatus {
 				t.Errorf("expected status %d, but got %d", test.expectedStatus, rr.Code)
 			}
-			if test.expectedBody != "" && rr.Body.String() != test.expectedBody {
+			if test.expectedBody != "" && !strings.Contains(rr.Body.String(), test.expectedBody) {
 				t.Errorf("expected body %q, but got %q", test.expectedBody, rr.Body)
 			}
-			t.Log(rr.Body)
 		})
 	}
 }
