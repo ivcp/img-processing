@@ -25,9 +25,9 @@ func Test_app_updatePollHandler(t *testing.T) {
 			`{"question":"changed", "description":"added description", "expires_at":%q}`,
 			time.Now().Add(2*time.Minute).Format(time.RFC3339),
 		), http.StatusOK, `"question":"changed","description":"added description"`},
-		{"empty json", "1", `{}`, http.StatusBadRequest, `"no fields provided for update"`},
-		{"bad id", "-1", `{"question":"changed"}`, http.StatusBadRequest, `"invalid id"`},
-		{"no record", "2", `{"question":"changed"}`, http.StatusNotFound, `"the requested resource could not be found"`},
+		{"empty json", "1", `{}`, http.StatusBadRequest, "no fields provided for update"},
+		{"bad id", "-1", `{"question":"changed"}`, http.StatusBadRequest, "invalid id"},
+		{"no record", "2", `{"question":"changed"}`, http.StatusNotFound, "the requested resource could not be found"},
 	}
 
 	for _, test := range tests {
