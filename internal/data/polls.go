@@ -23,14 +23,6 @@ type Poll struct {
 	Version     int           `json:"version"`
 }
 
-type PollOption struct {
-	ID    int    `json:"id"`
-	Value string `json:"value"`
-	// Position of option in the list, starting at 0
-	Position  int `json:"position"`
-	VoteCount int `json:"vote_count"`
-}
-
 func ValidatePoll(v *validator.Validator, poll *Poll) {
 	v.Check(strings.TrimSpace(poll.Question) != "", "question", "must not be empty")
 	v.Check(len(poll.Question) <= 500, "question", "must not be more than 500 bytes long")
@@ -50,7 +42,7 @@ func ValidatePoll(v *validator.Validator, poll *Poll) {
 	v.Check(validator.Unique(optPositions), "options", "positions must be unique")
 	for _, o := range optValues {
 		v.Check(strings.TrimSpace(o) != "", "options", "option values must not be empty")
-		v.Check(len(o) <= 500, "options", "must not be more than 500 bytes long")
+		v.Check(len(o) <= 500, "options", "option value must not be more than 500 bytes long")
 	}
 	for _, p := range optPositions {
 		v.Check(p >= 0, "options", "position must be greater or equal to 0")
@@ -72,29 +64,11 @@ func (p PollModel) Insert(poll *Poll) error {
 		RETURNING id, created_at, updated_at, version;				
 		`
 
-	queryOption := `
-		INSERT INTO poll_options (value, poll_id, position, vote_count)
-		VALUES ($1, $2, $3, $4)		
-		RETURNING id;
-	`
-
 	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time}
 
-	err := p.DB.QueryRow(
+	return p.DB.QueryRow(
 		context.Background(), queryPoll, args...,
 	).Scan(&poll.ID, &poll.CreatedAt, &poll.UpdatedAt, &poll.Version)
-
-	for i, option := range poll.Options {
-		args := []any{option.Value, poll.ID, option.Position, option.VoteCount}
-		err := p.DB.QueryRow(
-			context.Background(), queryOption, args...,
-		).Scan(&poll.Options[i].ID)
-		if err != nil {
-			return fmt.Errorf("insert poll: %w", err)
-		}
-	}
-
-	return err
 }
 
 func (p PollModel) Get(id int) (*Poll, error) {
@@ -102,20 +76,15 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		return nil, ErrRecordNotFound
 	}
 
-	queryPoll := `
+	query := `
 		SELECT id, question, description, created_at, 
 		updated_at, expires_at, version		
 		FROM polls 	
 		WHERE id = $1;
 	`
-	queryOption := `
-		SELECT id, value, position, vote_count
-		FROM poll_options 
-		WHERE poll_id = $1;
-	`
 	var poll Poll
 
-	err := p.DB.QueryRow(context.Background(), queryPoll, id).Scan(
+	err := p.DB.QueryRow(context.Background(), query, id).Scan(
 		&poll.ID,
 		&poll.Question,
 		&poll.Description,
@@ -132,30 +101,6 @@ func (p PollModel) Get(id int) (*Poll, error) {
 			return nil, fmt.Errorf("get poll: %w", err)
 		}
 	}
-
-	var options []*PollOption
-
-	rows, err := p.DB.Query(context.Background(), queryOption, id)
-	if err != nil {
-		return nil, fmt.Errorf("get poll: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var pollOption PollOption
-		err := rows.Scan(
-			&pollOption.ID,
-			&pollOption.Value,
-			&pollOption.Position,
-			&pollOption.VoteCount,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("get poll option: %w", err)
-		}
-		options = append(options, &pollOption)
-	}
-
-	poll.Options = options
 
 	return &poll, nil
 }
@@ -212,12 +157,8 @@ func (p MockPollModel) Insert(poll *Poll) error {
 func (p MockPollModel) Get(id int) (*Poll, error) {
 	if id == 1 {
 		poll := Poll{
-			ID:       1,
-			Question: "Test?",
-			Options: []*PollOption{
-				{ID: 1, Value: "Yes", Position: 0, VoteCount: 0},
-				{ID: 2, Value: "No", Position: 1, VoteCount: 0},
-			},
+			ID:        1,
+			Question:  "Test?",
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			ExpiresAt: ExpiresAt{time.Now().Add(2 * time.Minute)},
