@@ -141,7 +141,7 @@ func Test_app_createPollHandler(t *testing.T) {
 				questionInvalid,
 			),
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"options":"must not be more than 500 bytes long"}}`,
+			expectedBody:   `{"error":{"options":"option value must not be more than 500 bytes long"}}`,
 		},
 		{
 			name: "invalid json field type",
