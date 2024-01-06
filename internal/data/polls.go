@@ -39,7 +39,7 @@ func ValidatePoll(v *validator.Validator, poll *Poll) {
 		v.Check(strings.TrimSpace(poll.Description) != "", "description", "must not be empty")
 	}
 	v.Check(poll.Options != nil, "options", "must be provided")
-	v.Check(len(poll.Options) >= 1, "options", "must contain at least one option")
+	v.Check(len(poll.Options) >= 2, "options", "must contain at least two options")
 	var optValues []string
 	var optPositions []int
 	for _, opt := range poll.Options {
