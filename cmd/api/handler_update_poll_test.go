@@ -45,7 +45,6 @@ func Test_app_updatePollHandler(t *testing.T) {
 			if !strings.Contains(rr.Body.String(), test.expectedBody) {
 				t.Errorf("expected body to contain %q, but got %q", test.expectedBody, rr.Body)
 			}
-			t.Log(rr.Body)
 		})
 	}
 }
