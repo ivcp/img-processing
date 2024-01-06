@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
@@ -27,17 +26,10 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	type option struct {
-		Value    string `json:"value"`
-		Position int    `json:"position"`
-	}
-
 	var input struct {
-		Question    string         `json:"question"`
-		Description string         `json:"description"`
-		EditOptions map[int]option `json:"edit_options"`
-		AddOptions  []option       `json:"add_options"`
-		ExpiresAt   time.Time      `json:"expires_at"`
+		Question    *string        `json:"question"`
+		Description *string        `json:"description"`
+		ExpiresAt   data.ExpiresAt `json:"expires_at"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -46,34 +38,22 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if input.EditOptions != nil {
-		if len(input.EditOptions) != len(poll.Options) {
-			app.badRequestResponse(w, r, errors.New("wrong num of options provided"))
-			return
-		}
-		for i, option := range poll.Options {
-			inputOpt, ok := input.EditOptions[option.ID]
-			if ok {
-				poll.Options[i].Value = inputOpt.Value
-				poll.Options[i].Position = inputOpt.Position
-			}
-			if !ok {
-				app.badRequestResponse(w, r, errors.New("unexisting option ID provided"))
-				return
-			}
-		}
+	if input.Question != nil {
+		poll.Question = *input.Question
 	}
 
-	for _, option := range input.AddOptions {
-		poll.Options = append(poll.Options, &data.PollOption{
-			Value:    option.Value,
-			Position: option.Position,
-		})
+	if input.Description != nil {
+		poll.Description = *input.Description
 	}
 
-	poll.Question = input.Question
-	poll.Description = input.Description
-	poll.ExpiresAt = input.ExpiresAt
+	if !input.ExpiresAt.IsZero() {
+		poll.ExpiresAt = input.ExpiresAt
+	}
+
+	if input.Question == nil && input.Description == nil && input.ExpiresAt.IsZero() {
+		app.badRequestResponse(w, r, errors.New("no fields provided for update"))
+		return
+	}
 
 	v := validator.New()
 
