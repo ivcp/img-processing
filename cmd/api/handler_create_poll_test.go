@@ -154,7 +154,6 @@ func Test_app_createPollHandler(t *testing.T) {
 			expectedBody:   `{"poll":{"id":1,"question":"Test?"`,
 		},
 		// ADD location header test
-		// Change minimum opts to 2
 	}
 
 	for _, test := range tests {
@@ -168,6 +167,9 @@ func Test_app_createPollHandler(t *testing.T) {
 			}
 			if !strings.Contains(rr.Body.String(), test.expectedBody) {
 				t.Errorf("expected body %q, but got %q", test.expectedBody, rr.Body)
+			}
+			if rr.Code == http.StatusCreated && rr.Header().Get("Location") != "/v1/polls/1" {
+				t.Errorf("Location does not contain link to created poll")
 			}
 		})
 	}
