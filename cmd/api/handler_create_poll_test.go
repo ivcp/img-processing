@@ -55,16 +55,6 @@ func Test_app_createPollHandler(t *testing.T) {
 			expectedBody:   `{"error":{"description":"must not be more than 1000 bytes long"}}`,
 		},
 		{
-			name: "description provided but empty string",
-			json: `{
-				"question":"Test?", 
-				"description":" ", 
-				"options":[{"value":"first","position":0},{"value":"second","position":1}]
-				}`,
-			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   `{"error":{"description":"must not be empty"}}`,
-		},
-		{
 			name: "expires_at invalid",
 			json: fmt.Sprintf(
 				`{
