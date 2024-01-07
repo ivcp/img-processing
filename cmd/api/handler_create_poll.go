@@ -49,13 +49,6 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-	for _, opt := range poll.Options {
-		err = app.models.PollOptions.Insert(opt, poll.ID)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-	}
 
 	headers := make(http.Header)
 	headers.Set("Location", fmt.Sprintf("/v1/polls/%d", poll.ID))
