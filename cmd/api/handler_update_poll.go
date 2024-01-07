@@ -26,13 +26,6 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 		}
 		return
 	}
-	pollOptions, err := app.models.PollOptions.GetAllByPollID(poll.ID)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	poll.Options = pollOptions
 
 	var input struct {
 		Question    *string        `json:"question"`
