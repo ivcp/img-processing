@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
@@ -27,12 +28,12 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 
 	options := []*data.PollOption{}
 	for _, option := range input.Options {
-		options = append(options, &data.PollOption{Value: option.Value, Position: option.Position})
+		options = append(options, &data.PollOption{Value: strings.TrimSpace(option.Value), Position: option.Position})
 	}
 
 	poll := &data.Poll{
-		Question:    input.Question,
-		Description: input.Description,
+		Question:    strings.TrimSpace(input.Question),
+		Description: strings.TrimSpace(input.Description),
 		Options:     options,
 		ExpiresAt:   input.ExpiresAt,
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
@@ -46,11 +47,11 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if input.Question != nil {
-		poll.Question = *input.Question
+		poll.Question = strings.TrimSpace(*input.Question)
 	}
 
 	if input.Description != nil {
-		poll.Description = *input.Description
+		poll.Description = strings.TrimSpace(*input.Description)
 	}
 
 	if !input.ExpiresAt.IsZero() {
