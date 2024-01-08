@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -119,12 +118,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 	rows, err := p.DB.Query(context.Background(), query, id)
 	defer rows.Close()
 	if err != nil {
-		switch {
-		case errors.Is(err, pgx.ErrNoRows):
-			return nil, ErrRecordNotFound
-		default:
-			return nil, fmt.Errorf("get poll: %w", err)
-		}
+		return nil, fmt.Errorf("get poll: %w", err)
 	}
 
 	if !rows.Next() {
