@@ -242,7 +242,11 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			ExpiresAt: ExpiresAt{time.Now().Add(2 * time.Minute)},
-			Version:   1,
+			Options: []*PollOption{
+				{ID: 1, Value: "One", Position: 0},
+				{ID: 2, Value: "Two", Position: 1},
+			},
+			Version: 1,
 		}
 		return &poll, nil
 	}
