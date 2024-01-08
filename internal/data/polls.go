@@ -117,6 +117,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 	`
 
 	rows, err := p.DB.Query(context.Background(), query, id)
+	defer rows.Close()
 	if err != nil {
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
@@ -125,7 +126,10 @@ func (p PollModel) Get(id int) (*Poll, error) {
 			return nil, fmt.Errorf("get poll: %w", err)
 		}
 	}
-	defer rows.Close()
+
+	if !rows.Next() {
+		return nil, ErrRecordNotFound
+	}
 
 	var poll Poll
 	var options []*PollOption
@@ -133,7 +137,9 @@ func (p PollModel) Get(id int) (*Poll, error) {
 	first := true
 	for rows.Next() {
 		var option PollOption
-		if first {
+
+		switch {
+		case first:
 			err = rows.Scan(
 				&poll.ID,
 				&poll.Question,
@@ -147,7 +153,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 				&option.Position,
 				&option.VoteCount,
 			)
-		} else {
+		default:
 			err = rows.Scan(
 				nil,
 				nil,
@@ -162,12 +168,14 @@ func (p PollModel) Get(id int) (*Poll, error) {
 				&option.VoteCount,
 			)
 		}
+
 		if err != nil {
 			return nil, fmt.Errorf("get poll - scan: %w", err)
 		}
 		options = append(options, &option)
 		first = false
 	}
+
 	err = rows.Err()
 	if err != nil {
 		return nil, fmt.Errorf("get poll: %w", err)
