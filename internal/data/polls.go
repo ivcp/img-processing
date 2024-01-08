@@ -111,7 +111,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		p.updated_at, p.expires_at, p.version,
 		po.id, po.value, po.position, po.vote_count
 		FROM polls p
-		JOIN poll_options po ON p.id = po.poll_id
+		JOIN poll_options po ON po.poll_id = p.id 
 		WHERE p.id = $1;
 	`
 
@@ -121,15 +121,12 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		return nil, fmt.Errorf("get poll: %w", err)
 	}
 
-	if !rows.Next() {
-		return nil, ErrRecordNotFound
-	}
-
 	var poll Poll
 	var options []*PollOption
 
 	first := true
 	for rows.Next() {
+
 		var option PollOption
 
 		switch {
@@ -166,6 +163,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		if err != nil {
 			return nil, fmt.Errorf("get poll - scan: %w", err)
 		}
+
 		options = append(options, &option)
 		first = false
 	}
@@ -176,6 +174,13 @@ func (p PollModel) Get(id int) (*Poll, error) {
 	}
 
 	poll.Options = options
+
+	// checlking if loop ran because pgx does not return
+	// row not found err on this query for some reason
+	// and the poll will be returned with zero values
+	if first {
+		return nil, ErrRecordNotFound
+	}
 
 	return &poll, nil
 }
