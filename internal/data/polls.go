@@ -175,10 +175,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 
 	poll.Options = options
 
-	// checlking if loop ran because pgx does not return
-	// row not found err on this query for some reason
-	// and the poll will be returned with zero values
-	if first {
+	if len(options) == 0 {
 		return nil, ErrRecordNotFound
 	}
 
