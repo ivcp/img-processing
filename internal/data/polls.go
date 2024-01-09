@@ -91,8 +91,8 @@ func (p PollModel) Insert(poll *Poll) error {
 		}
 		options = append(options, &pollOption)
 	}
-	err = rowsOpts.Err()
-	if err != nil {
+
+	if err := rowsOpts.Err(); err != nil {
 		return fmt.Errorf("insert poll - get poll options: %w", err)
 	}
 
@@ -168,16 +168,15 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		first = false
 	}
 
-	err = rows.Err()
-	if err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("get poll: %w", err)
 	}
-
-	poll.Options = options
 
 	if len(options) == 0 {
 		return nil, ErrRecordNotFound
 	}
+
+	poll.Options = options
 
 	return &poll, nil
 }
