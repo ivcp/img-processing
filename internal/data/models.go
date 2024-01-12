@@ -9,7 +9,8 @@ import (
 var ErrRecordNotFound = errors.New("record not found")
 
 type Models struct {
-	Polls Polls
+	Polls       Polls
+	PollOptions PollOptions
 }
 
 type Polls interface {
@@ -18,15 +19,20 @@ type Polls interface {
 	Update(poll *Poll) error
 	Delete(id int) error
 }
+type PollOptions interface {
+	Insert(option *PollOption, pollID int) error
+}
 
 func NewModels(db *pgxpool.Pool) Models {
 	return Models{
-		Polls: PollModel{DB: db},
+		Polls:       PollModel{DB: db},
+		PollOptions: PollOptionModel{DB: db},
 	}
 }
 
 func NewMockModels() Models {
 	return Models{
-		Polls: MockPollModel{},
+		Polls:       MockPollModel{},
+		PollOptions: MockPollOptionModel{},
 	}
 }
