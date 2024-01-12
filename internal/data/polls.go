@@ -184,9 +184,10 @@ func (p PollModel) Get(id int) (*Poll, error) {
 func (p PollModel) Update(poll *Poll) error {
 	queryPoll := `
 		UPDATE polls
-		SET question = $1, description = $2, expires_at = $3, version = version + 1
+		SET question = $1, description = $2, expires_at = $3, 
+		version = version + 1, updated_at = NOW()
 		WHERE id = $4
-		RETURNING version;
+		RETURNING version, updated_at;
 	`
 
 	args := []any{
@@ -195,7 +196,7 @@ func (p PollModel) Update(poll *Poll) error {
 		poll.ExpiresAt.Time,
 		poll.ID,
 	}
-	return p.DB.QueryRow(context.Background(), queryPoll, args...).Scan(&poll.Version)
+	return p.DB.QueryRow(context.Background(), queryPoll, args...).Scan(&poll.Version, &poll.UpdatedAt)
 }
 
 func (p PollModel) Delete(id int) error {
