@@ -57,7 +57,7 @@ func (app *application) addPollOptionHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "option added successfully"}, nil)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"message": "option added successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
