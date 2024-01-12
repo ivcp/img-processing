@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func Test_app_addPollOptionHandler(t *testing.T) {
+func Test_app_addOptionHandler(t *testing.T) {
 	tests := []struct {
 		name           string
 		id             string
@@ -52,10 +52,10 @@ func Test_app_addPollOptionHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPost, "/", strings.NewReader(test.json))
 			chiCtx := chi.NewRouteContext()
-			chiCtx.URLParams.Add("id", test.id)
+			chiCtx.URLParams.Add("pollID", test.id)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(app.addPollOptionHandler)
+			handler := http.HandlerFunc(app.addOptionHandler)
 			handler.ServeHTTP(rr, req)
 			if rr.Code != test.expectedStatus {
 				t.Errorf("expected status %d, but got %d", test.expectedStatus, rr.Code)

@@ -27,7 +27,7 @@ func Test_app_showPollHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, "/", nil)
 			chiCtx := chi.NewRouteContext()
-			chiCtx.URLParams.Add("id", test.id)
+			chiCtx.URLParams.Add("pollID", test.id)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.showPollHandler)

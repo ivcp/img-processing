@@ -30,7 +30,7 @@ func Test_app_readIDParam(t *testing.T) {
 		chiCtx := chi.NewRouteContext()
 		chiCtx.URLParams.Add("id", test.paramId)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
-		_, err := app.readIDParam(req)
+		_, err := app.readIDParam(req, "id")
 		if !test.expectError && err != nil {
 			t.Errorf("%s: expected no err, but got one: %q", test.name, err)
 		}

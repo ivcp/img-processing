@@ -12,13 +12,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) readIDParam(r *http.Request) (int, error) {
-	param := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(param)
-	if err != nil || id < 1 {
+func (app *application) readIDParam(r *http.Request, id string) (int, error) {
+	param := chi.URLParam(r, id)
+	idInt, err := strconv.Atoi(param)
+	if err != nil || idInt < 1 {
 		return 0, errors.New("invalid id")
 	}
-	return id, nil
+	return idInt, nil
 }
 
 type envelope map[string]any

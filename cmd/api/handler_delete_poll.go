@@ -8,7 +8,7 @@ import (
 )
 
 func (app *application) deletePollHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+	id, err := app.readIDParam(r, "pollID")
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
