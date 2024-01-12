@@ -8,7 +8,7 @@ import (
 	"github.com/ivcp/polls/internal/validator"
 )
 
-func (app *application) createPollOptionHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) addPollOptionHandler(w http.ResponseWriter, r *http.Request) {
 	pollID, err := app.readIDParam(r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
