@@ -17,5 +17,7 @@ func (app *application) routes() http.Handler {
 	mux.Patch("/v1/polls/{id}", app.updatePollHandler)
 	mux.Delete("/v1/polls/{id}", app.deletePollHandler)
 
+	mux.Post("/v1/polls/{id}/options", app.createPollOptionHandler)
+
 	return mux
 }
