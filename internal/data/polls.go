@@ -19,13 +19,6 @@ type Poll struct {
 	ExpiresAt   ExpiresAt     `json:"expires_at"`
 	Version     int           `json:"version"`
 }
-type PollOption struct {
-	ID    int    `json:"id"`
-	Value string `json:"value"`
-	// Position of option in the list, starting at 0
-	Position  int `json:"position"`
-	VoteCount int `json:"vote_count"`
-}
 
 type PollModel struct {
 	DB *pgxpool.Pool
@@ -44,7 +37,7 @@ func (p PollModel) Insert(poll *Poll) error {
 		context.Background(), query, args...,
 	).Scan(&poll.ID, &poll.CreatedAt, &poll.UpdatedAt, &poll.Version)
 	if err != nil {
-		return fmt.Errorf("insert poll: %d", err)
+		return fmt.Errorf("insert poll: %w", err)
 	}
 
 	rows := make([][]any, 0, len(poll.Options))
@@ -61,7 +54,7 @@ func (p PollModel) Insert(poll *Poll) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("insert poll options: %d", err)
+		return fmt.Errorf("insert poll options: %w", err)
 	}
 
 	queryOptions := `
