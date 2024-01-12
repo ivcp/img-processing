@@ -15,10 +15,11 @@ func Test_app_routes(t *testing.T) {
 	}{
 		{"/v1/healthcheck", http.MethodGet},
 		{"/v1/polls", http.MethodPost},
-		{"/v1/polls/{id}", http.MethodGet},
-		{"/v1/polls/{id}", http.MethodPatch},
-		{"/v1/polls/{id}", http.MethodDelete},
-		{"/v1/polls/{id}/options", http.MethodPost},
+		{"/v1/polls/{pollID}", http.MethodGet},
+		{"/v1/polls/{pollID}", http.MethodPatch},
+		{"/v1/polls/{pollID}", http.MethodDelete},
+		{"/v1/polls/{pollID}/options", http.MethodPost},
+		{"/v1/polls/{pollID}/options/{optionID}", http.MethodPatch},
 	}
 	testMux := app.routes()
 	chiRoutes := testMux.(chi.Routes)
