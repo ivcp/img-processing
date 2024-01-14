@@ -47,10 +47,10 @@ func (app *application) updateOptionPositionHandler(w http.ResponseWriter, r *ht
 
 	var optionsToUpdate []*data.PollOption
 
-	for i, option := range poll.Options {
+	for _, option := range poll.Options {
 		if position, ok := optMap[option.ID]; ok {
-			poll.Options[i].Position = position
-			optionsToUpdate = append(optionsToUpdate, poll.Options[i])
+			option.Position = position
+			optionsToUpdate = append(optionsToUpdate, option)
 		}
 	}
 
