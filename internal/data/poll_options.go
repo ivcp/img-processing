@@ -76,6 +76,24 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 	return p.setUpdatedAt(pollID)
 }
 
+func (p PollOptionModel) Delete(optionID int, pollID int) error {
+	query := `
+		DELETE FROM poll_options
+		WHERE id = $1;
+	`
+
+	result, err := p.DB.Exec(context.Background(), query, optionID)
+	if err != nil {
+		return fmt.Errorf("delete option: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
 func (p PollOptionModel) setUpdatedAt(pollID int) error {
 	query := `
 		UPDATE polls
@@ -104,5 +122,9 @@ func (p MockPollOptionModel) UpdateValue(option *PollOption) error {
 }
 
 func (p MockPollOptionModel) UpdatePosition(options []*PollOption) error {
+	return nil
+}
+
+func (p MockPollOptionModel) Delete(optionID int, pollID int) error {
 	return nil
 }
