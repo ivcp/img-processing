@@ -22,6 +22,7 @@ type Polls interface {
 type PollOptions interface {
 	Insert(option *PollOption, pollID int) error
 	UpdateValue(option *PollOption) error
+	UpdatePosition(options []*PollOption) error
 }
 
 func NewModels(db *pgxpool.Pool) Models {

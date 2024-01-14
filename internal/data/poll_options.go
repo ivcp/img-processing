@@ -74,6 +74,38 @@ func (p PollOptionModel) UpdateValue(option *PollOption) error {
 	return nil
 }
 
+func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
+	query := `
+		UPDATE poll_options 
+		SET position = $1
+		WHERE id = $2
+		RETURNING poll_id;	
+	`
+
+	var pollID int
+
+	for _, option := range options {
+		err := p.DB.QueryRow(
+			context.Background(), query, option.Position, option.ID,
+		).Scan(&pollID)
+		if err != nil {
+			return fmt.Errorf("update option position: %w", err)
+		}
+	}
+
+	queryPoll := `
+		UPDATE polls
+		SET version = version + 1, updated_at = NOW()
+		WHERE id = $1;
+	`
+	_, err := p.DB.Exec(context.Background(), queryPoll, pollID)
+	if err != nil {
+		return fmt.Errorf("insert poll option: %w", err)
+	}
+
+	return nil
+}
+
 // mocks
 type MockPollOptionModel struct {
 	DB *pgxpool.Pool
@@ -84,5 +116,9 @@ func (p MockPollOptionModel) Insert(option *PollOption, pollID int) error {
 }
 
 func (p MockPollOptionModel) UpdateValue(option *PollOption) error {
+	return nil
+}
+
+func (p MockPollOptionModel) UpdatePosition(options []*PollOption) error {
 	return nil
 }
