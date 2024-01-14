@@ -21,7 +21,7 @@ func Test_app_addOptionHandler(t *testing.T) {
 		{
 			name:           "valid add option",
 			id:             "1",
-			json:           `{"value":"test", "position":2}`,
+			json:           `{"value":"test", "position":3}`,
 			expectedStatus: http.StatusCreated,
 			expectedBody:   "option added successfully",
 		},
