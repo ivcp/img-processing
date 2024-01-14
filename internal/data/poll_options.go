@@ -31,17 +31,7 @@ func (p PollOptionModel) Insert(option *PollOption, pollID int) error {
 		return fmt.Errorf("insert poll option: %w", err)
 	}
 
-	queryPoll := `
-		UPDATE polls
-		SET version = version + 1, updated_at = NOW()
-		WHERE id = $1;
-	`
-	_, err = p.DB.Exec(context.Background(), queryPoll, pollID)
-	if err != nil {
-		return fmt.Errorf("insert poll option: %w", err)
-	}
-
-	return nil
+	return p.setUpdatedAt(pollID)
 }
 
 func (p PollOptionModel) UpdateValue(option *PollOption) error {
@@ -61,17 +51,7 @@ func (p PollOptionModel) UpdateValue(option *PollOption) error {
 		return fmt.Errorf("update poll option: %w", err)
 	}
 
-	queryPoll := `
-		UPDATE polls
-		SET version = version + 1, updated_at = NOW()
-		WHERE id = $1;
-	`
-	_, err = p.DB.Exec(context.Background(), queryPoll, pollID)
-	if err != nil {
-		return fmt.Errorf("insert poll option: %w", err)
-	}
-
-	return nil
+	return p.setUpdatedAt(pollID)
 }
 
 func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
@@ -93,14 +73,18 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 		}
 	}
 
-	queryPoll := `
+	return p.setUpdatedAt(pollID)
+}
+
+func (p PollOptionModel) setUpdatedAt(pollID int) error {
+	query := `
 		UPDATE polls
-		SET version = version + 1, updated_at = NOW()
+		SET updated_at = NOW()
 		WHERE id = $1;
 	`
-	_, err := p.DB.Exec(context.Background(), queryPoll, pollID)
+	_, err := p.DB.Exec(context.Background(), query, pollID)
 	if err != nil {
-		return fmt.Errorf("insert poll option: %w", err)
+		return fmt.Errorf("set updated_at: %w", err)
 	}
 
 	return nil

@@ -6,8 +6,7 @@ CREATE TABLE IF NOT EXISTS polls (
     description text NOT NULL,
     created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
     updated_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
-    expires_at timestamp(0) with time zone NOT NULL,
-    version int NOT NULL DEFAULT 1
+    expires_at timestamp(0) with time zone NOT NULL    
 );
 -- +goose StatementEnd
 

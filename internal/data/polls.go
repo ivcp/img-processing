@@ -17,7 +17,6 @@ type Poll struct {
 	CreatedAt   time.Time     `json:"created_at"`
 	UpdatedAt   time.Time     `json:"updated_at"`
 	ExpiresAt   ExpiresAt     `json:"expires_at"`
-	Version     int           `json:"version"`
 }
 
 type PollModel struct {
@@ -28,14 +27,14 @@ func (p PollModel) Insert(poll *Poll) error {
 	query := `
 		INSERT INTO polls (question, description, expires_at)
 		VALUES ($1, $2, $3)
-		RETURNING id, created_at, updated_at, version;				
+		RETURNING id, created_at, updated_at;				
 		`
 
 	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time}
 
 	err := p.DB.QueryRow(
 		context.Background(), query, args...,
-	).Scan(&poll.ID, &poll.CreatedAt, &poll.UpdatedAt, &poll.Version)
+	).Scan(&poll.ID, &poll.CreatedAt, &poll.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("insert poll: %w", err)
 	}
@@ -101,8 +100,8 @@ func (p PollModel) Get(id int) (*Poll, error) {
 
 	query := `
 		SELECT p.id, p. question, p.description, p.created_at, 
-		p.updated_at, p.expires_at, p.version,
-		po.id, po.value, po.position, po.vote_count
+		p.updated_at, p.expires_at, po.id, po.value, 
+		po.position, po.vote_count
 		FROM polls p
 		JOIN poll_options po ON po.poll_id = p.id 
 		WHERE p.id = $1;
@@ -131,7 +130,6 @@ func (p PollModel) Get(id int) (*Poll, error) {
 				&poll.CreatedAt,
 				&poll.UpdatedAt,
 				&poll.ExpiresAt.Time,
-				&poll.Version,
 				&option.ID,
 				&option.Value,
 				&option.Position,
@@ -139,7 +137,6 @@ func (p PollModel) Get(id int) (*Poll, error) {
 			)
 		default:
 			err = rows.Scan(
-				nil,
 				nil,
 				nil,
 				nil,
@@ -177,10 +174,10 @@ func (p PollModel) Get(id int) (*Poll, error) {
 func (p PollModel) Update(poll *Poll) error {
 	queryPoll := `
 		UPDATE polls
-		SET question = $1, description = $2, expires_at = $3, 
-		version = version + 1, updated_at = NOW()
+		SET question = $1, description = $2, 
+		expires_at = $3, updated_at = NOW()
 		WHERE id = $4
-		RETURNING version, updated_at;
+		RETURNING updated_at;
 	`
 
 	args := []any{
@@ -189,7 +186,7 @@ func (p PollModel) Update(poll *Poll) error {
 		poll.ExpiresAt.Time,
 		poll.ID,
 	}
-	return p.DB.QueryRow(context.Background(), queryPoll, args...).Scan(&poll.Version, &poll.UpdatedAt)
+	return p.DB.QueryRow(context.Background(), queryPoll, args...).Scan(&poll.UpdatedAt)
 }
 
 func (p PollModel) Delete(id int) error {
@@ -236,7 +233,6 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 				{ID: 1, Value: "One", Position: 0},
 				{ID: 2, Value: "Two", Position: 1},
 			},
-			Version: 1,
 		}
 		return &poll, nil
 	}
