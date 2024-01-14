@@ -232,6 +232,7 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 			Options: []*PollOption{
 				{ID: 1, Value: "One", Position: 0},
 				{ID: 2, Value: "Two", Position: 1},
+				{ID: 3, Value: "Three", Position: 2},
 			},
 		}
 		return &poll, nil
