@@ -20,6 +20,7 @@ func Test_app_routes(t *testing.T) {
 		{"/v1/polls/{pollID}", http.MethodDelete},
 		{"/v1/polls/{pollID}/options", http.MethodPost},
 		{"/v1/polls/{pollID}/options/{optionID}", http.MethodPatch},
+		{"/v1/polls/{pollID}/options/{optionID}", http.MethodDelete},
 		{"/v1/polls/{pollID}/options", http.MethodPatch},
 	}
 	testMux := app.routes()
