@@ -54,6 +54,11 @@ func (app *application) updateOptionPositionHandler(w http.ResponseWriter, r *ht
 		}
 	}
 
+	if len(optionsToUpdate) != len(input.Options) || len(optionsToUpdate) == 0 {
+		app.badRequestResponse(w, r, errors.New("invalid option id, or no id provided"))
+		return
+	}
+
 	v := validator.New()
 
 	if data.ValidatePoll(v, poll); !v.Valid() {
@@ -67,7 +72,7 @@ func (app *application) updateOptionPositionHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"message": "options updated successfully"}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "options updated successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
