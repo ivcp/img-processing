@@ -65,7 +65,7 @@ func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.models.PollOptions.Delete(optionID, poll.ID)
+	err = app.models.PollOptions.Delete(optionID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

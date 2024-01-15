@@ -81,7 +81,7 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 	return p.setUpdatedAt(pollID)
 }
 
-func (p PollOptionModel) Delete(optionID int, pollID int) error {
+func (p PollOptionModel) Delete(optionID int) error {
 	query := `
 		DELETE FROM poll_options
 		WHERE id = $1;
@@ -133,6 +133,6 @@ func (p MockPollOptionModel) UpdatePosition(options []*PollOption) error {
 	return nil
 }
 
-func (p MockPollOptionModel) Delete(optionID int, pollID int) error {
+func (p MockPollOptionModel) Delete(optionID int) error {
 	return nil
 }
