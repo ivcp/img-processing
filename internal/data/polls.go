@@ -32,7 +32,7 @@ func (p PollModel) Insert(poll *Poll) error {
 
 	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	err := p.DB.QueryRow(
@@ -48,7 +48,7 @@ func (p PollModel) Insert(poll *Poll) error {
 		rows = append(rows, []any{opt.Value, poll.ID, opt.Position, opt.VoteCount})
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	_, err = p.DB.CopyFrom(
 		ctx,
@@ -69,7 +69,7 @@ func (p PollModel) Insert(poll *Poll) error {
 
 	options := make([]*PollOption, 0, len(poll.Options))
 
-	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	rowsOpts, err := p.DB.Query(ctx, queryOptions, poll.ID)
@@ -115,7 +115,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		WHERE p.id = $1;
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	rows, err := p.DB.Query(ctx, query, id)
@@ -198,7 +198,7 @@ func (p PollModel) Update(poll *Poll) error {
 		poll.ID,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	return p.DB.QueryRow(ctx, queryPoll, args...).Scan(&poll.UpdatedAt)
@@ -214,7 +214,7 @@ func (p PollModel) Delete(id int) error {
 		WHERE id = $1;
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	result, err := p.DB.Exec(ctx, query, id)

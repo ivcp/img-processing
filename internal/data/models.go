@@ -2,11 +2,14 @@ package data
 
 import (
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var ErrRecordNotFound = errors.New("record not found")
+
+const dbTimeout = time.Second * 3
 
 type Models struct {
 	Polls       Polls

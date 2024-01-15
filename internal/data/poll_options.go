@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -27,7 +26,7 @@ func (p PollOptionModel) Insert(option *PollOption, pollID int) error {
 	`
 
 	args := []any{pollID, option.Value, option.Position, option.VoteCount}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	_, err := p.DB.Exec(ctx, query, args...)
 	if err != nil {
@@ -46,7 +45,7 @@ func (p PollOptionModel) UpdateValue(option *PollOption) error {
 	`
 
 	var pollID int
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	err := p.DB.QueryRow(
 		ctx, query, option.Value, option.ID,
@@ -69,7 +68,7 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 	var pollID int
 
 	for _, option := range options {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 		defer cancel()
 		err := p.DB.QueryRow(
 			ctx, query, option.Position, option.ID,
@@ -87,7 +86,7 @@ func (p PollOptionModel) Delete(optionID int, pollID int) error {
 		DELETE FROM poll_options
 		WHERE id = $1;
 	`
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	result, err := p.DB.Exec(ctx, query, optionID)
 	if err != nil {
@@ -107,7 +106,7 @@ func (p PollOptionModel) setUpdatedAt(pollID int) error {
 		SET updated_at = NOW()
 		WHERE id = $1;
 	`
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	_, err := p.DB.Exec(ctx, query, pollID)
 	if err != nil {
