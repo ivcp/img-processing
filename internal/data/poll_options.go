@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -26,7 +27,9 @@ func (p PollOptionModel) Insert(option *PollOption, pollID int) error {
 	`
 
 	args := []any{pollID, option.Value, option.Position, option.VoteCount}
-	_, err := p.DB.Exec(context.Background(), query, args...)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	_, err := p.DB.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("insert poll option: %w", err)
 	}
@@ -43,9 +46,10 @@ func (p PollOptionModel) UpdateValue(option *PollOption) error {
 	`
 
 	var pollID int
-
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	err := p.DB.QueryRow(
-		context.Background(), query, option.Value, option.ID,
+		ctx, query, option.Value, option.ID,
 	).Scan(&pollID)
 	if err != nil {
 		return fmt.Errorf("update poll option: %w", err)
@@ -65,8 +69,10 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 	var pollID int
 
 	for _, option := range options {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
 		err := p.DB.QueryRow(
-			context.Background(), query, option.Position, option.ID,
+			ctx, query, option.Position, option.ID,
 		).Scan(&pollID)
 		if err != nil {
 			return fmt.Errorf("update option position: %w", err)
@@ -81,8 +87,9 @@ func (p PollOptionModel) Delete(optionID int, pollID int) error {
 		DELETE FROM poll_options
 		WHERE id = $1;
 	`
-
-	result, err := p.DB.Exec(context.Background(), query, optionID)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	result, err := p.DB.Exec(ctx, query, optionID)
 	if err != nil {
 		return fmt.Errorf("delete option: %w", err)
 	}
@@ -100,7 +107,9 @@ func (p PollOptionModel) setUpdatedAt(pollID int) error {
 		SET updated_at = NOW()
 		WHERE id = $1;
 	`
-	_, err := p.DB.Exec(context.Background(), query, pollID)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	_, err := p.DB.Exec(ctx, query, pollID)
 	if err != nil {
 		return fmt.Errorf("set updated_at: %w", err)
 	}

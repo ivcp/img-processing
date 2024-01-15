@@ -32,8 +32,11 @@ func (p PollModel) Insert(poll *Poll) error {
 
 	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	err := p.DB.QueryRow(
-		context.Background(), query, args...,
+		ctx, query, args...,
 	).Scan(&poll.ID, &poll.CreatedAt, &poll.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("insert poll: %w", err)
@@ -45,8 +48,10 @@ func (p PollModel) Insert(poll *Poll) error {
 		rows = append(rows, []any{opt.Value, poll.ID, opt.Position, opt.VoteCount})
 	}
 
+	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	_, err = p.DB.CopyFrom(
-		context.Background(),
+		ctx,
 		pgx.Identifier{"poll_options"},
 		[]string{"value", "poll_id", "position", "vote_count"},
 		pgx.CopyFromRows(rows),
@@ -64,7 +69,10 @@ func (p PollModel) Insert(poll *Poll) error {
 
 	options := make([]*PollOption, 0, len(poll.Options))
 
-	rowsOpts, err := p.DB.Query(context.Background(), queryOptions, poll.ID)
+	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rowsOpts, err := p.DB.Query(ctx, queryOptions, poll.ID)
 	if err != nil {
 		return fmt.Errorf("insert poll - get poll options: %w", err)
 	}
@@ -107,7 +115,10 @@ func (p PollModel) Get(id int) (*Poll, error) {
 		WHERE p.id = $1;
 	`
 
-	rows, err := p.DB.Query(context.Background(), query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := p.DB.Query(ctx, query, id)
 	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("get poll: %w", err)
@@ -186,7 +197,11 @@ func (p PollModel) Update(poll *Poll) error {
 		poll.ExpiresAt.Time,
 		poll.ID,
 	}
-	return p.DB.QueryRow(context.Background(), queryPoll, args...).Scan(&poll.UpdatedAt)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return p.DB.QueryRow(ctx, queryPoll, args...).Scan(&poll.UpdatedAt)
 }
 
 func (p PollModel) Delete(id int) error {
@@ -199,7 +214,10 @@ func (p PollModel) Delete(id int) error {
 		WHERE id = $1;
 	`
 
-	result, err := p.DB.Exec(context.Background(), query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := p.DB.Exec(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("delete poll: %w", err)
 	}
