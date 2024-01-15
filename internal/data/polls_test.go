@@ -24,9 +24,10 @@ var (
 )
 
 var (
-	resource *dockertest.Resource
-	pool     *dockertest.Pool
-	testDB   *pgxpool.Pool
+	resource   *dockertest.Resource
+	pool       *dockertest.Pool
+	testDB     *pgxpool.Pool
+	testModels Models
 )
 
 func TestMain(m *testing.M) {
@@ -74,6 +75,8 @@ func TestMain(m *testing.M) {
 		log.Fatalf("something went wrong: %s", err)
 	}
 
+	testModels = NewModels(testDB)
+
 	code := m.Run()
 	if err := pool.Purge(resource); err != nil {
 		log.Fatalf("could not purge resource: %s", err)
@@ -99,5 +102,34 @@ func Test_pingDB(t *testing.T) {
 	err := testDB.Ping(context.Background())
 	if err != nil {
 		t.Error("can't ping DB")
+	}
+}
+
+func TestPollsInsert(t *testing.T) {
+	poll := Poll{
+		Question: "Test?",
+		Options: []*PollOption{
+			{Value: "One", Position: 0},
+			{Value: "Two", Position: 1},
+			{Value: "Three", Position: 2},
+		},
+	}
+
+	if err := testModels.Polls.Insert(&poll); err != nil {
+		t.Errorf("insert poll return an error: %s", err)
+	}
+
+	if poll.ID != 1 {
+		t.Errorf("expected id to be 1 but got %d", poll.ID)
+	}
+
+	if poll.CreatedAt.IsZero() || poll.UpdatedAt.IsZero() {
+		t.Errorf("expected created and updated not to be zero values")
+	}
+
+	for _, opt := range poll.Options {
+		if opt.ID == 0 {
+			t.Errorf("expected option id not to be zero: %s %d", opt.Value, opt.ID)
+		}
 	}
 }
