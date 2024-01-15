@@ -194,6 +194,119 @@ func TestPollsUpdate(t *testing.T) {
 	}
 }
 
+func TestPollOptionsInsert(t *testing.T) {
+	poll, _ := testModels.Polls.Get(1)
+	oldUpdatedAt := poll.UpdatedAt
+
+	newValue := "Four"
+
+	option := PollOption{
+		Value:    newValue,
+		Position: 3,
+	}
+
+	time.Sleep(1 * time.Second)
+	if err := testModels.PollOptions.Insert(&option, 1); err != nil {
+		t.Errorf("add option returned an error: %s", err)
+	}
+
+	poll, _ = testModels.Polls.Get(1)
+
+	if len(poll.Options) != 4 {
+		t.Errorf("expected 4 options in poll, but got %d", len(poll.Options))
+	}
+
+	match := false
+	for _, opt := range poll.Options {
+		if opt.Value == newValue {
+			match = true
+		}
+	}
+	if !match {
+		t.Errorf("expected option to contain value %q, but it doesn't", newValue)
+	}
+
+	if poll.UpdatedAt.Equal(oldUpdatedAt) {
+		t.Errorf("expected poll updated at to be changed")
+	}
+}
+
+func TestPollOptionsUpdateValue(t *testing.T) {
+	newValue := "Test change value"
+
+	option := PollOption{
+		ID:    1,
+		Value: newValue,
+	}
+
+	if err := testModels.PollOptions.UpdateValue(&option); err != nil {
+		t.Errorf("update option value returned an error: %s", err)
+	}
+
+	poll, _ := testModels.Polls.Get(1)
+
+	match := false
+	for _, opt := range poll.Options {
+		if opt.ID == 1 && opt.Value == newValue {
+			match = true
+		}
+	}
+
+	if !match {
+		t.Errorf("option value not updated")
+	}
+}
+
+func TestPollOptionsUpdatePosition(t *testing.T) {
+	options := []*PollOption{
+		{ID: 4, Position: 2},
+		{ID: 3, Position: 3},
+	}
+
+	if err := testModels.PollOptions.UpdatePosition(options); err != nil {
+		t.Errorf("update option value returned an error: %s", err)
+	}
+
+	poll, _ := testModels.Polls.Get(1)
+
+	for _, opt := range poll.Options {
+		if opt.Value == "Four" {
+			if opt.Position != 2 {
+				t.Errorf(
+					"option %s did not change position: want 2 but got %d",
+					opt.Value,
+					opt.Position,
+				)
+			}
+		}
+		if opt.Value == "Three" {
+			if opt.Position != 3 {
+				t.Errorf(
+					"option %s did not change position: want 2 but got %d",
+					opt.Value,
+					opt.Position,
+				)
+			}
+		}
+	}
+}
+
+func TestPollOptionsDelete(t *testing.T) {
+	if err := testModels.PollOptions.Delete(3); err != nil {
+		t.Errorf("delete option value returned an error: %s", err)
+	}
+
+	poll, _ := testModels.Polls.Get(1)
+
+	if len(poll.Options) != 3 {
+		t.Errorf("expected len of options to be 3 but got %d", len(poll.Options))
+	}
+
+	if err := testModels.PollOptions.Delete(5); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on non-existent option")
+	}
+}
+
 func TestPollsDelete(t *testing.T) {
 	if err := testModels.Polls.Delete(10); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent poll")
