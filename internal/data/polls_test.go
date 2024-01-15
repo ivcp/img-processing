@@ -2,10 +2,12 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -116,7 +118,7 @@ func TestPollsInsert(t *testing.T) {
 	}
 
 	if err := testModels.Polls.Insert(&poll); err != nil {
-		t.Errorf("insert poll return an error: %s", err)
+		t.Errorf("insert poll returned an error: %s", err)
 	}
 
 	if poll.ID != 1 {
@@ -131,5 +133,78 @@ func TestPollsInsert(t *testing.T) {
 		if opt.ID == 0 {
 			t.Errorf("expected option id not to be zero: %s %d", opt.Value, opt.ID)
 		}
+	}
+}
+
+func TestPollsGet(t *testing.T) {
+	poll, err := testModels.Polls.Get(1)
+	if err != nil {
+		t.Errorf("get poll returned an error: %s", err)
+	}
+
+	if poll.Question != "Test?" {
+		t.Errorf("get poll returned wrong question: expected 'Test?' but got %s", poll.Question)
+	}
+
+	_, err = testModels.Polls.Get(9)
+	if !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on non-existent poll")
+	}
+
+	_, err = testModels.Polls.Get(0)
+	if !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on bad poll id")
+	}
+}
+
+func TestPollsUpdate(t *testing.T) {
+	newQuestion := "Is this a test?"
+	newDescription := "Test description."
+	newExpires := ExpiresAt{time.Now().Add(10 * time.Minute)}
+
+	poll, _ := testModels.Polls.Get(1)
+
+	oldUpdatedAt := poll.UpdatedAt
+
+	poll.Question = newQuestion
+	poll.Description = newDescription
+	poll.ExpiresAt = newExpires
+
+	time.Sleep(1 * time.Second)
+	if err := testModels.Polls.Update(poll); err != nil {
+		t.Errorf("update poll returned an error: %s", err)
+	}
+
+	poll, _ = testModels.Polls.Get(1)
+
+	if poll.Question != newQuestion {
+		t.Errorf("expected question to be %s, but got %s", newQuestion, poll.Question)
+	}
+	if poll.Description != newDescription {
+		t.Errorf("expected description to be %s, but got %s", newDescription, poll.Description)
+	}
+	if poll.ExpiresAt.IsZero() {
+		t.Errorf("expected expires at not to be zero value")
+	}
+
+	if poll.UpdatedAt.Equal(oldUpdatedAt) {
+		t.Errorf("expected updated at to be changed")
+	}
+}
+
+func TestPollsDelete(t *testing.T) {
+	if err := testModels.Polls.Delete(10); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on non-existent poll")
+	}
+	if err := testModels.Polls.Delete(0); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on bad poll id")
+	}
+
+	if err := testModels.Polls.Delete(1); err != nil {
+		t.Errorf("delete poll returned an error: %s", err)
+	}
+	_, err := testModels.Polls.Get(1)
+	if !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on getting deleted poll")
 	}
 }
