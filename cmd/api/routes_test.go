@@ -15,6 +15,7 @@ func Test_app_routes(t *testing.T) {
 	}{
 		{"/v1/healthcheck", http.MethodGet},
 		{"/v1/polls", http.MethodPost},
+		{"/v1/polls", http.MethodGet},
 		{"/v1/polls/{pollID}", http.MethodGet},
 		{"/v1/polls/{pollID}", http.MethodPatch},
 		{"/v1/polls/{pollID}", http.MethodDelete},
