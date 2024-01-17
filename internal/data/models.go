@@ -21,6 +21,7 @@ type Polls interface {
 	Get(id int) (*Poll, error)
 	Update(poll *Poll) error
 	Delete(id int) error
+	GetAll(search string, filters Filters) ([]*Poll, error)
 }
 type PollOptions interface {
 	Insert(option *PollOption, pollID int) error

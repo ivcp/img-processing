@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -229,6 +230,58 @@ func (p PollModel) Delete(id int) error {
 	return nil
 }
 
+func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
+	query := `
+		SELECT p.id, p.question, p.description, 
+		p.created_at, p.updated_at, p.expires_at,
+	    jsonb_agg(jsonb_build_object(
+			'id', po.id, 'value', po.value, 'position', po.position, 'vote_count', po.vote_count
+			)) AS options
+		FROM polls p
+		JOIN poll_options po ON po.poll_id = p.id 
+		GROUP BY p.id
+		ORDER BY p.id;
+	`
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	rows, err := p.DB.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("get all polls: %w", err)
+	}
+	defer rows.Close()
+
+	var polls []*Poll
+
+	for rows.Next() {
+		var poll Poll
+		var optionsJson string
+		err := rows.Scan(
+			&poll.ID,
+			&poll.Question,
+			&poll.Description,
+			&poll.CreatedAt,
+			&poll.UpdatedAt,
+			&poll.ExpiresAt.Time,
+			&optionsJson,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("get polls - scan: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(optionsJson), &poll.Options); err != nil {
+			return nil, fmt.Errorf("get polls - unmarshal options: %w", err)
+		}
+		polls = append(polls, &poll)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("get polls: %w", err)
+	}
+
+	return polls, nil
+}
+
 // mocks
 type MockPollModel struct {
 	DB *pgxpool.Pool
@@ -270,4 +323,8 @@ func (p MockPollModel) Delete(id int) error {
 		return nil
 	}
 	return ErrRecordNotFound
+}
+
+func (p MockPollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
+	return nil, nil
 }
