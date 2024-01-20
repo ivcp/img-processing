@@ -231,7 +231,7 @@ func (p PollModel) Delete(id int) error {
 }
 
 func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
-	query := `
+	query := fmt.Sprintf(`
 		SELECT p.id, p.question, p.description, 
 		p.created_at, p.updated_at, p.expires_at,
 	    jsonb_agg(jsonb_build_object(
@@ -239,19 +239,21 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
 			)) AS options
 		FROM polls p
 		JOIN poll_options po ON po.poll_id = p.id 
+		WHERE (to_tsvector('simple', question) @@ plainto_tsquery('simple', $1) OR $1 = '') 
 		GROUP BY p.id
-		ORDER BY p.id;
-	`
+		ORDER BY %s %s, id ASC;
+	`, filters.sortColumn(), filters.sortDirection())
+
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	rows, err := p.DB.Query(ctx, query)
+	rows, err := p.DB.Query(ctx, query, search)
 	if err != nil {
 		return nil, fmt.Errorf("get all polls: %w", err)
 	}
 	defer rows.Close()
 
-	var polls []*Poll
+	polls := []*Poll{}
 
 	for rows.Next() {
 		var poll Poll
