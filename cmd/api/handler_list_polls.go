@@ -28,13 +28,18 @@ func (app *application) listPollsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	polls, err := app.models.Polls.GetAll(input.Search, input.Filters)
+	polls, metadata, err := app.models.Polls.GetAll(input.Search, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	if err := app.writeJSON(w, http.StatusOK, envelope{"polls": polls}, nil); err != nil {
+	if err := app.writeJSON(
+		w,
+		http.StatusOK,
+		envelope{"polls": polls, "metadata": metadata},
+		nil,
+	); err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
