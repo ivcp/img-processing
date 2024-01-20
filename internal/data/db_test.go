@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package data
 
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -321,5 +322,207 @@ func TestPollsDelete(t *testing.T) {
 	_, err := testModels.Polls.Get(1)
 	if !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on getting deleted poll")
+	}
+}
+
+func TestPollGetAll(t *testing.T) {
+	var poll Poll
+	for i := 1; i <= 10; i++ {
+		if i == 10 {
+			// sleep to delay inserting the record
+			time.Sleep(time.Second)
+		}
+		poll.Question = fmt.Sprintf("%c question", 96+i)
+		poll.Options = []*PollOption{
+			{Value: fmt.Sprintf("Option one, poll %c", 96+i), Position: 0},
+			{Value: fmt.Sprintf("Option two, poll %c", 96+i), Position: 1},
+			{Value: fmt.Sprintf("Option three, poll %c", 96+i), Position: 2},
+		}
+		if err := testModels.Polls.Insert(&poll); err != nil {
+			t.Fatalf("get all polls - insert poll returned an error: %s", err)
+		}
+	}
+
+	tests := []struct {
+		name             string
+		search           string
+		page             int
+		pageSize         int
+		sort             string
+		expectedRecords  int
+		expectedTotal    int
+		expectedLastPage int
+	}{
+		{
+			name:             "default settings",
+			page:             1,
+			pageSize:         20,
+			sort:             "-created_at",
+			expectedRecords:  10,
+			expectedTotal:    10,
+			expectedLastPage: 1,
+		},
+		{
+			name:             "page size",
+			page:             1,
+			pageSize:         2,
+			sort:             "-created_at",
+			expectedRecords:  2,
+			expectedTotal:    10,
+			expectedLastPage: 5,
+		},
+		{
+			name:             "page",
+			page:             2,
+			pageSize:         5,
+			sort:             "-created_at",
+			expectedRecords:  5,
+			expectedTotal:    10,
+			expectedLastPage: 2,
+		},
+		{
+			name:             "sort by question asc",
+			page:             1,
+			pageSize:         20,
+			sort:             "question",
+			expectedRecords:  10,
+			expectedTotal:    10,
+			expectedLastPage: 1,
+		},
+		{
+			name:             "sort by question desc",
+			page:             1,
+			pageSize:         20,
+			sort:             "-question",
+			expectedRecords:  10,
+			expectedTotal:    10,
+			expectedLastPage: 1,
+		},
+		{
+			name:             "sort by created asc",
+			page:             1,
+			pageSize:         20,
+			sort:             "created_at",
+			expectedRecords:  10,
+			expectedTotal:    10,
+			expectedLastPage: 1,
+		},
+		{
+			name:             "search",
+			search:           "d",
+			page:             1,
+			pageSize:         20,
+			sort:             "-created_at",
+			expectedRecords:  1,
+			expectedTotal:    1,
+			expectedLastPage: 1,
+		},
+		{
+			name:             "no matches",
+			search:           "test",
+			page:             1,
+			pageSize:         20,
+			sort:             "-created_at",
+			expectedRecords:  0,
+			expectedTotal:    0,
+			expectedLastPage: 0,
+		},
+		{
+			name:             "page value too high",
+			page:             42,
+			pageSize:         20,
+			sort:             "-created_at",
+			expectedRecords:  0,
+			expectedTotal:    0,
+			expectedLastPage: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			polls, metadata, err := testModels.Polls.GetAll(test.search, Filters{
+				Page:         test.page,
+				PageSize:     test.pageSize,
+				Sort:         test.sort,
+				SortSafelist: []string{"created_at", "question", "-created_at", "-question"},
+			})
+			if err != nil {
+				t.Errorf("get all polls returned an error: %s", err)
+			}
+
+			if len(polls) != test.expectedRecords {
+				t.Errorf("expected to get %d records but got %d", test.expectedRecords, len(polls))
+			}
+
+			if metadata.TotalRecords != test.expectedTotal {
+				t.Errorf(
+					"expected total records in Metadata to be %d records but got %d",
+					test.expectedTotal,
+					metadata.TotalRecords,
+				)
+			}
+			if metadata.LastPage != test.expectedLastPage {
+				t.Errorf(
+					"expected last page in Metadata to be %d records but got %d",
+					test.expectedLastPage,
+					metadata.LastPage,
+				)
+			}
+
+			if test.search == "" {
+				switch test.sort {
+				case "-created_at":
+					if metadata.CurrentPage == 1 {
+						if polls[0].Question != "j question" {
+							t.Errorf("sorting: expected first poll to be the last one iserted but got, %q", polls[0].Question)
+						}
+
+						if polls[0].Options[0].Value != "Option one, poll j" {
+							t.Errorf("options: expected option to be in first poll but got, %q", polls[0].Options[0].Value)
+						}
+					}
+				case "created_at":
+					if metadata.CurrentPage == 1 {
+						if polls[9].Question != "j question" {
+							t.Errorf("sorting: expected last poll to be the last one iserted but got, %q", polls[0].Question)
+						}
+
+						if polls[9].Options[0].Value != "Option one, poll j" {
+							t.Errorf("options: expected option to be in first poll but got, %q", polls[9].Options[0].Value)
+						}
+					}
+				case "question":
+					if metadata.CurrentPage == 1 {
+						if polls[0].Question != "a question" {
+							t.Errorf("sorting by question: expected first poll question to start witn 'a', but got %q", polls[0].Question)
+						}
+						if polls[9].Question != "j question" {
+							t.Errorf("sorting by question: expected last poll question to start witn 'j', but got %q", polls[9].Question)
+						}
+					}
+				case "-question":
+					if metadata.CurrentPage == 1 {
+						if polls[0].Question != "j question" {
+							t.Errorf("sorting by question: expected first poll question to start witn 'j', but got %q", polls[0].Question)
+						}
+						if polls[9].Question != "a question" {
+							t.Errorf("sorting by question: expected last poll question to start witn 'a', but got %q", polls[9].Question)
+						}
+					}
+				default:
+					t.Fatal("unknown sort value")
+				}
+			}
+
+			if test.search != "" && test.expectedRecords != 0 {
+				if !strings.Contains(polls[0].Question, test.search) {
+					t.Errorf("expected found poll question to contain %q but got %q", test.search, polls[0].Question)
+				}
+				opt := fmt.Sprintf("Option one, poll %s", test.search)
+				if polls[0].Options[0].Value != opt {
+					t.Errorf("expected option %q to be in poll but got, %q", opt, polls[0].Options[0].Value)
+				}
+			}
+		})
 	}
 }
