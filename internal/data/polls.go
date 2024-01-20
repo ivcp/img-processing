@@ -230,9 +230,9 @@ func (p PollModel) Delete(id int) error {
 	return nil
 }
 
-func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
+func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, error) {
 	query := fmt.Sprintf(`
-		SELECT p.id, p.question, p.description, 
+		SELECT count(*) OVER(), p.id, p.question, p.description, 
 		p.created_at, p.updated_at, p.expires_at,
 	    jsonb_agg(jsonb_build_object(
 			'id', po.id, 'value', po.value, 'position', po.position, 'vote_count', po.vote_count
@@ -241,24 +241,27 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
 		JOIN poll_options po ON po.poll_id = p.id 
 		WHERE (to_tsvector('simple', question) @@ plainto_tsquery('simple', $1) OR $1 = '') 
 		GROUP BY p.id
-		ORDER BY %s %s, id ASC;
+		ORDER BY %s %s, id ASC
+		LIMIT $2 OFFSET $3;
 	`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	rows, err := p.DB.Query(ctx, query, search)
+	rows, err := p.DB.Query(ctx, query, search, filters.limit(), filters.offset())
 	if err != nil {
-		return nil, fmt.Errorf("get all polls: %w", err)
+		return nil, Metadata{}, fmt.Errorf("get all polls: %w", err)
 	}
 	defer rows.Close()
 
+	var totalRecords int
 	polls := []*Poll{}
 
 	for rows.Next() {
 		var poll Poll
 		var optionsJson string
 		err := rows.Scan(
+			&totalRecords,
 			&poll.ID,
 			&poll.Question,
 			&poll.Description,
@@ -268,20 +271,22 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
 			&optionsJson,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("get polls - scan: %w", err)
+			return nil, Metadata{}, fmt.Errorf("get polls - scan: %w", err)
 		}
 
 		if err := json.Unmarshal([]byte(optionsJson), &poll.Options); err != nil {
-			return nil, fmt.Errorf("get polls - unmarshal options: %w", err)
+			return nil, Metadata{}, fmt.Errorf("get polls - unmarshal options: %w", err)
 		}
 		polls = append(polls, &poll)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("get polls: %w", err)
+		return nil, Metadata{}, fmt.Errorf("get polls: %w", err)
 	}
 
-	return polls, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return polls, metadata, nil
 }
 
 // mocks
@@ -327,6 +332,6 @@ func (p MockPollModel) Delete(id int) error {
 	return ErrRecordNotFound
 }
 
-func (p MockPollModel) GetAll(search string, filters Filters) ([]*Poll, error) {
-	return nil, nil
+func (p MockPollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, error) {
+	return nil, Metadata{}, nil
 }
