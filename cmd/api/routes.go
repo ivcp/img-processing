@@ -4,11 +4,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func (app *application) routes() http.Handler {
 	mux := chi.NewRouter()
 
+	mux.Use(middleware.Recoverer)
 	mux.NotFound(app.notFoundResponse)
 
 	mux.Get("/v1/healthcheck", app.healthcheckHandler)
