@@ -36,3 +36,8 @@ func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Reques
 func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
 	app.errorJSONResponse(w, r, http.StatusUnprocessableEntity, errors)
 }
+
+func (app *application) rateLimitExcededResponse(w http.ResponseWriter, r *http.Request) {
+	message := "rate limit exceeded"
+	app.errorJSONResponse(w, r, http.StatusTooManyRequests, message)
+}

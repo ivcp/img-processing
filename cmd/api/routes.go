@@ -11,6 +11,7 @@ func (app *application) routes() http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
+	mux.Use(app.rateLimit)
 	mux.NotFound(app.notFoundResponse)
 
 	mux.Get("/v1/healthcheck", app.healthcheckHandler)
