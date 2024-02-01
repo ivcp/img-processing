@@ -21,6 +21,11 @@ type config struct {
 	db   struct {
 		dsn string
 	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 
 type application struct {
@@ -39,6 +44,10 @@ func main() {
 		"db-dsn",
 		os.Getenv("POLLS_DB_DSN"),
 		"DSN string")
+
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests persecond")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
