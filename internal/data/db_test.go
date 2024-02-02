@@ -292,6 +292,33 @@ func TestPollOptionsUpdatePosition(t *testing.T) {
 	}
 }
 
+func TestPollOptionsVote(t *testing.T) {
+	err := testModels.PollOptions.Vote(1)
+	if err != nil {
+		t.Errorf("vote option returned an error: %s", err)
+	}
+
+	poll, _ := testModels.Polls.Get(1)
+	for _, opt := range poll.Options {
+		if opt.ID == 1 && opt.VoteCount != 1 {
+			t.Errorf("expected vote count to increase by one, but it didn't: vote_count %d", opt.VoteCount)
+		}
+	}
+
+	_ = testModels.PollOptions.Vote(1)
+	_ = testModels.PollOptions.Vote(1)
+	poll, _ = testModels.Polls.Get(1)
+	for _, opt := range poll.Options {
+		if opt.ID == 1 && opt.VoteCount != 3 {
+			t.Errorf("expected vote count to be 3, but got %d", opt.VoteCount)
+		}
+	}
+
+	if err := testModels.PollOptions.Vote(99); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on non-existent option")
+	}
+}
+
 func TestPollOptionsDelete(t *testing.T) {
 	if err := testModels.PollOptions.Delete(3); err != nil {
 		t.Errorf("delete option value returned an error: %s", err)
