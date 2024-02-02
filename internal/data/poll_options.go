@@ -2,8 +2,10 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -84,15 +86,37 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 func (p PollOptionModel) Delete(optionID int) error {
 	query := `
 		DELETE FROM poll_options
-		WHERE id = $1;
+		WHERE id = $1
+		RETURNING poll_id;	
 	`
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	var pollID int
+	err := p.DB.QueryRow(ctx, query, optionID).Scan(&pollID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrRecordNotFound
+		}
+		return fmt.Errorf("delete option: %w", err)
+	}
+
+	return p.setUpdatedAt(pollID)
+}
+
+func (p PollOptionModel) Vote(optionID int) error {
+	query := `
+		UPDATE poll_options 
+		SET vote_count = vote_count + 1
+		WHERE id = $1;		
+	`
+
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	result, err := p.DB.Exec(ctx, query, optionID)
 	if err != nil {
-		return fmt.Errorf("delete option: %w", err)
+		return fmt.Errorf("vote option: %w", err)
 	}
-
 	if result.RowsAffected() == 0 {
 		return ErrRecordNotFound
 	}
@@ -134,5 +158,9 @@ func (p MockPollOptionModel) UpdatePosition(options []*PollOption) error {
 }
 
 func (p MockPollOptionModel) Delete(optionID int) error {
+	return nil
+}
+
+func (p MockPollOptionModel) Vote(optionID int) error {
 	return nil
 }
