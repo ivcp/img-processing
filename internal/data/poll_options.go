@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -104,21 +105,38 @@ func (p PollOptionModel) Delete(optionID int) error {
 	return p.setUpdatedAt(pollID)
 }
 
-func (p PollOptionModel) Vote(optionID int) error {
+func (p PollOptionModel) Vote(optionID int, ip string) error {
 	query := `
 		UPDATE poll_options 
 		SET vote_count = vote_count + 1
-		WHERE id = $1;		
+		WHERE id = $1
+		RETURNING poll_id;
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
-	result, err := p.DB.Exec(ctx, query, optionID)
+
+	var pollID int
+	err := p.DB.QueryRow(ctx, query, optionID).Scan(&pollID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrRecordNotFound
+		}
 		return fmt.Errorf("vote option: %w", err)
 	}
-	if result.RowsAffected() == 0 {
-		return ErrRecordNotFound
+
+	var paramIP pgtype.Inet
+	err = paramIP.Set(ip)
+	if err != nil {
+		return fmt.Errorf("vote option - set ip: %w", err)
+	}
+	queryIP := `
+		INSERT INTO ips (ip, poll_id)
+		VALUES ($1, $2); 		
+	`
+	_, err = p.DB.Exec(ctx, queryIP, paramIP, pollID)
+	if err != nil {
+		return fmt.Errorf("vote option - insert ip: %w", err)
 	}
 
 	return nil
@@ -161,6 +179,6 @@ func (p MockPollOptionModel) Delete(optionID int) error {
 	return nil
 }
 
-func (p MockPollOptionModel) Vote(optionID int) error {
+func (p MockPollOptionModel) Vote(optionID int, ip string) error {
 	return nil
 }

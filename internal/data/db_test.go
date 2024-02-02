@@ -293,7 +293,7 @@ func TestPollOptionsUpdatePosition(t *testing.T) {
 }
 
 func TestPollOptionsVote(t *testing.T) {
-	err := testModels.PollOptions.Vote(1)
+	err := testModels.PollOptions.Vote(1, "0.0.0.0")
 	if err != nil {
 		t.Errorf("vote option returned an error: %s", err)
 	}
@@ -305,8 +305,8 @@ func TestPollOptionsVote(t *testing.T) {
 		}
 	}
 
-	_ = testModels.PollOptions.Vote(1)
-	_ = testModels.PollOptions.Vote(1)
+	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
+	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
 	poll, _ = testModels.Polls.Get(1)
 	for _, opt := range poll.Options {
 		if opt.ID == 1 && opt.VoteCount != 3 {
@@ -314,7 +314,7 @@ func TestPollOptionsVote(t *testing.T) {
 		}
 	}
 
-	if err := testModels.PollOptions.Vote(99); !errors.Is(err, ErrRecordNotFound) {
+	if err := testModels.PollOptions.Vote(99, "0.0.0.0"); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent option")
 	}
 }

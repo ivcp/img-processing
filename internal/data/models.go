@@ -27,7 +27,7 @@ type PollOptions interface {
 	Insert(option *PollOption, pollID int) error
 	UpdateValue(option *PollOption) error
 	UpdatePosition(options []*PollOption) error
-	Vote(optionID int) error
+	Vote(optionID int, ip string) error
 	Delete(optionID int) error
 }
 
