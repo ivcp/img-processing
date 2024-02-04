@@ -2,6 +2,7 @@ package data
 
 import (
 	"errors"
+	"net"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,6 +23,7 @@ type Polls interface {
 	Update(poll *Poll) error
 	Delete(id int) error
 	GetAll(search string, filters Filters) ([]*Poll, Metadata, error)
+	GetVotedIPs(pollID int) ([]*net.IP, error)
 }
 type PollOptions interface {
 	Insert(option *PollOption, pollID int) error

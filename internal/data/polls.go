@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -289,6 +291,40 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, er
 	return polls, metadata, nil
 }
 
+func (p PollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
+	query := `
+	SELECT ip
+	FROM ips
+	WHERE poll_id = $1;
+	`
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	rows, err := p.DB.Query(ctx, query, pollID)
+	defer rows.Close()
+
+	if err != nil {
+		return nil, fmt.Errorf("get ips: %w", err)
+	}
+
+	var ips []*net.IP
+
+	for rows.Next() {
+		var ip pgtype.Inet
+		err := rows.Scan(&ip)
+		if err != nil {
+			return nil, fmt.Errorf("get ips - scan: %w", err)
+		}
+		ips = append(ips, &ip.IPNet.IP)
+
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("get ips: %w", err)
+	}
+
+	return ips, nil
+}
+
 // mocks
 type MockPollModel struct {
 	DB *pgxpool.Pool
@@ -334,4 +370,8 @@ func (p MockPollModel) Delete(id int) error {
 
 func (p MockPollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, error) {
 	return nil, Metadata{}, nil
+}
+
+func (p MockPollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
+	return nil, nil
 }
