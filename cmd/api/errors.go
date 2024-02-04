@@ -41,3 +41,8 @@ func (app *application) rateLimitExcededResponse(w http.ResponseWriter, r *http.
 	message := "rate limit exceeded"
 	app.errorJSONResponse(w, r, http.StatusTooManyRequests, message)
 }
+
+func (app *application) cannotVoteResponse(w http.ResponseWriter, r *http.Request) {
+	message := "you have already voted on this poll"
+	app.errorJSONResponse(w, r, http.StatusForbidden, message)
+}
