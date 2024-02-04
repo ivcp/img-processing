@@ -352,6 +352,51 @@ func TestPollsDelete(t *testing.T) {
 	}
 }
 
+func TestPollGetVotedIPs(t *testing.T) {
+	poll := Poll{
+		Question: "ips",
+		Options: []*PollOption{
+			{Value: "One", Position: 0},
+			{Value: "Two", Position: 1},
+		},
+	}
+	_ = testModels.Polls.Insert(&poll)
+
+	// options will have ids 5 and 6
+	_ = testModels.PollOptions.Vote(5, "0.0.0.1")
+	_ = testModels.PollOptions.Vote(5, "0.0.0.2")
+	_ = testModels.PollOptions.Vote(6, "0.0.0.3")
+
+	ips, err := testModels.Polls.GetVotedIPs(2)
+	if err != nil {
+		t.Errorf("get ips returned an error: %s", err)
+	}
+
+	if len(ips) != 3 {
+		t.Errorf("expected 3 ips to be stored, but got %d", len(ips))
+	}
+
+	ips, err = testModels.Polls.GetVotedIPs(99)
+	if err != nil {
+		t.Errorf("get ips returned an error: %s", err)
+	}
+	if len(ips) != 0 {
+		t.Errorf("expected empty slice on non existent poll, but got %s", ips)
+	}
+
+	_ = testModels.Polls.Insert(&poll)
+	ips, err = testModels.Polls.GetVotedIPs(3)
+	if err != nil {
+		t.Errorf("get ips returned an error: %s", err)
+	}
+	if len(ips) != 0 {
+		t.Errorf("expected empty slice if poll without votes, but got %s", ips)
+	}
+
+	_ = testModels.Polls.Delete(2)
+	_ = testModels.Polls.Delete(3)
+}
+
 func TestPollGetAll(t *testing.T) {
 	var poll Poll
 	for i := 1; i <= 10; i++ {
