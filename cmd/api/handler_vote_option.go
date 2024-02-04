@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"net"
 	"net/http"
 
 	"github.com/ivcp/polls/internal/data"
@@ -31,7 +32,13 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.models.PollOptions.Vote(optionID)
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.models.PollOptions.Vote(optionID, ip)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
