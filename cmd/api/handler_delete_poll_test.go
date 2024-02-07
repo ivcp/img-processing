@@ -24,7 +24,7 @@ func Test_app_deletePollHandler(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+			req, _ := http.NewRequest(http.MethodDelete, "/", nil)
 			chiCtx := chi.NewRouteContext()
 			chiCtx.URLParams.Add("pollID", test.id)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))

@@ -23,7 +23,7 @@ func Test_app_deleteOptionHandler(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req, _ := http.NewRequest(http.MethodPatch, "/", nil)
+			req, _ := http.NewRequest(http.MethodDelete, "/", nil)
 			chiCtx := chi.NewRouteContext()
 			chiCtx.URLParams.Add("pollID", "1")
 			chiCtx.URLParams.Add("optionID", test.id)
