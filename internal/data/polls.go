@@ -373,5 +373,8 @@ func (p MockPollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata
 }
 
 func (p MockPollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
-	return nil, nil
+	var ips []*net.IP
+	i := net.IPv4(0, 0, 0, 1)
+	ips = append(ips, &i)
+	return ips, nil
 }
