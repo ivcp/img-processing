@@ -20,14 +20,12 @@ func Test_app_voteOptionHandler(t *testing.T) {
 	}{
 		{
 			name:           "valid vote",
-			id:             "1",
 			ip:             "0.0.0.0:0",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "vote successful",
 		},
 		{
 			name:           "ip already voted",
-			id:             "1",
 			ip:             "0.0.0.1:0",
 			expectedStatus: http.StatusForbidden,
 			expectedBody:   "you have already voted on this poll",
@@ -38,7 +36,7 @@ func Test_app_voteOptionHandler(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPost, "/", nil)
 			chiCtx := chi.NewRouteContext()
 			chiCtx.URLParams.Add("pollID", "1")
-			chiCtx.URLParams.Add("optionID", test.id)
+			chiCtx.URLParams.Add("optionID", "1")
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			req.RemoteAddr = test.ip
 			rr := httptest.NewRecorder()
