@@ -9,11 +9,7 @@ import (
 )
 
 func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request) {
-	pollID, err := app.readIDParam(r, "pollID")
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
+	pollID := r.Context().Value("pollID").(int)
 
 	poll, err := app.models.Polls.Get(pollID)
 	if err != nil {

@@ -25,8 +25,8 @@ func Test_app_deleteOptionHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodDelete, "/", nil)
 			chiCtx := chi.NewRouteContext()
-			chiCtx.URLParams.Add("pollID", "1")
 			chiCtx.URLParams.Add("optionID", test.id)
+			req = req.WithContext(context.WithValue(req.Context(), "pollID", 1))
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.deleteOptionHandler)

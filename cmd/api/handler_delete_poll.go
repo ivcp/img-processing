@@ -8,13 +8,8 @@ import (
 )
 
 func (app *application) deletePollHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r, "pollID")
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	err = app.models.Polls.Delete(id)
+	id := r.Context().Value("pollID").(int)
+	err := app.models.Polls.Delete(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
