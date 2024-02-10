@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package data
 
@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/ory/dockertest/v3"
@@ -120,7 +121,12 @@ func TestPollsInsert(t *testing.T) {
 		},
 	}
 
-	if err := testModels.Polls.Insert(&poll); err != nil {
+	token, err := generateToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := testModels.Polls.Insert(&poll, token.Hash); err != nil {
 		t.Errorf("insert poll returned an error: %s", err)
 	}
 
@@ -136,6 +142,17 @@ func TestPollsInsert(t *testing.T) {
 		if opt.ID == 0 {
 			t.Errorf("expected option id not to be zero: %s %d", opt.Value, opt.ID)
 		}
+	}
+
+	query := `
+		SELECT hash
+		FROM tokens
+		WHERE poll_id = $1;
+	`
+	row := testDB.QueryRow(context.Background(), query, poll.ID)
+	err = row.Scan()
+	if errors.Is(err, pgx.ErrNoRows) {
+		t.Errorf("token hash not inserted")
 	}
 }
 
@@ -360,7 +377,9 @@ func TestPollGetVotedIPs(t *testing.T) {
 			{Value: "Two", Position: 1},
 		},
 	}
-	_ = testModels.Polls.Insert(&poll)
+
+	token, _ := generateToken()
+	_ = testModels.Polls.Insert(&poll, token.Hash)
 
 	// options will have ids 5 and 6
 	_ = testModels.PollOptions.Vote(5, "0.0.0.1")
@@ -384,7 +403,8 @@ func TestPollGetVotedIPs(t *testing.T) {
 		t.Errorf("expected empty slice on non existent poll, but got %s", ips)
 	}
 
-	_ = testModels.Polls.Insert(&poll)
+	token, _ = generateToken()
+	_ = testModels.Polls.Insert(&poll, token.Hash)
 	ips, err = testModels.Polls.GetVotedIPs(3)
 	if err != nil {
 		t.Errorf("get ips returned an error: %s", err)
@@ -410,7 +430,8 @@ func TestPollGetAll(t *testing.T) {
 			{Value: fmt.Sprintf("Option two, poll %c", 96+i), Position: 1},
 			{Value: fmt.Sprintf("Option three, poll %c", 96+i), Position: 2},
 		}
-		if err := testModels.Polls.Insert(&poll); err != nil {
+		token, _ := generateToken()
+		if err := testModels.Polls.Insert(&poll, token.Hash); err != nil {
 			t.Fatalf("get all polls - insert poll returned an error: %s", err)
 		}
 	}

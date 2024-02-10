@@ -20,13 +20,14 @@ type Poll struct {
 	CreatedAt   time.Time     `json:"created_at"`
 	UpdatedAt   time.Time     `json:"updated_at"`
 	ExpiresAt   ExpiresAt     `json:"expires_at"`
+	Token       string        `json:"token,omitempty"`
 }
 
 type PollModel struct {
 	DB *pgxpool.Pool
 }
 
-func (p PollModel) Insert(poll *Poll) error {
+func (p PollModel) Insert(poll *Poll, tokenHash []byte) error {
 	query := `
 		INSERT INTO polls (question, description, expires_at)
 		VALUES ($1, $2, $3)
@@ -101,7 +102,16 @@ func (p PollModel) Insert(poll *Poll) error {
 
 	poll.Options = options
 
-	return nil
+	queryToken := `
+		INSERT INTO tokens (hash, poll_id)
+		VALUES ($1, $2);
+	`
+	ctx, cancel = context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	_, err = p.DB.Exec(ctx, queryToken, tokenHash, poll.ID)
+
+	return err
 }
 
 func (p PollModel) Get(id int) (*Poll, error) {
@@ -330,7 +340,7 @@ type MockPollModel struct {
 	DB *pgxpool.Pool
 }
 
-func (p MockPollModel) Insert(poll *Poll) error {
+func (p MockPollModel) Insert(poll *Poll, tokenHash []byte) error {
 	poll.ID = 1
 	return nil
 }

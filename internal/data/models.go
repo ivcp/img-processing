@@ -18,7 +18,7 @@ type Models struct {
 }
 
 type Polls interface {
-	Insert(poll *Poll) error
+	Insert(poll *Poll, tokenHash []byte) error
 	Get(id int) (*Poll, error)
 	Update(poll *Poll) error
 	Delete(id int) error
