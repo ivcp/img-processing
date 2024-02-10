@@ -337,8 +337,6 @@ func (p PollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
 	return ips, nil
 }
 
-// TODO: get token
-
 func (p PollModel) CheckToken(tokenPlaintext string) (int, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
