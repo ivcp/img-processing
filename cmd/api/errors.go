@@ -46,3 +46,9 @@ func (app *application) cannotVoteResponse(w http.ResponseWriter, r *http.Reques
 	message := "you have already voted on this poll"
 	app.errorJSONResponse(w, r, http.StatusForbidden, message)
 }
+
+func (app *application) invalidTokenResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+	message := "invalid or missing token"
+	app.errorJSONResponse(w, r, http.StatusUnauthorized, message)
+}
