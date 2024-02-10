@@ -44,7 +44,14 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.models.Polls.Insert(poll)
+	token, err := data.GenerateToken()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	poll.Token = token.Plaintext
+
+	err = app.models.Polls.Insert(poll, token.Hash)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -56,5 +63,6 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 	err = app.writeJSON(w, http.StatusCreated, envelope{"poll": poll}, headers)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
+		return
 	}
 }
