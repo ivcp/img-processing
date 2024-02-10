@@ -24,6 +24,7 @@ type Polls interface {
 	Delete(id int) error
 	GetAll(search string, filters Filters) ([]*Poll, Metadata, error)
 	GetVotedIPs(pollID int) ([]*net.IP, error)
+	CheckToken(tokenPlaintext string) (int, error)
 }
 type PollOptions interface {
 	Insert(option *PollOption, pollID int) error

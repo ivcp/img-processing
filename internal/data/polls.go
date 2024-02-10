@@ -2,7 +2,9 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -335,6 +337,32 @@ func (p PollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
 	return ips, nil
 }
 
+// TODO: get token
+
+func (p PollModel) CheckToken(tokenPlaintext string) (int, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+
+	query := `
+			SELECT poll_id
+			FROM tokens
+			WHERE hash = $1;
+		`
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	row := p.DB.QueryRow(ctx, query, tokenHash[:])
+
+	var pollID int
+	err := row.Scan(&pollID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrRecordNotFound
+		}
+		return 0, fmt.Errorf("check token: %w", err)
+	}
+
+	return pollID, nil
+}
+
 // mocks
 type MockPollModel struct {
 	DB *pgxpool.Pool
@@ -387,4 +415,8 @@ func (p MockPollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
 	i := net.IPv4(0, 0, 0, 1)
 	ips = append(ips, &i)
 	return ips, nil
+}
+
+func (p MockPollModel) CheckToken(tokenPlaintext string) (int, error) {
+	return 1, nil
 }

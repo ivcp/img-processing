@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/ory/dockertest/v3"
@@ -144,15 +143,13 @@ func TestPollsInsert(t *testing.T) {
 		}
 	}
 
-	query := `
-		SELECT hash
-		FROM tokens
-		WHERE poll_id = $1;
-	`
-	row := testDB.QueryRow(context.Background(), query, poll.ID)
-	err = row.Scan()
-	if errors.Is(err, pgx.ErrNoRows) {
-		t.Errorf("token hash not inserted")
+	_, err = testModels.Polls.CheckToken(token.Plaintext)
+	if err != nil {
+		if errors.Is(err, ErrRecordNotFound) {
+			t.Errorf("token hash not inserted")
+		} else {
+			t.Errorf("insert poll returned an error: %s", err)
+		}
 	}
 }
 
