@@ -10,12 +10,7 @@ import (
 )
 
 func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r, "pollID")
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
+	id := r.Context().Value("pollID").(int)
 	poll, err := app.models.Polls.Get(id)
 	if err != nil {
 		switch {
