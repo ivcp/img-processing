@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/ivcp/polls/internal/data"
+	"github.com/ivcp/polls/internal/validator"
 	"golang.org/x/time/rate"
 )
 
@@ -64,5 +68,58 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 			mu.Unlock()
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) requireToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO:
+		// check if token exists
+		// validate token
+		// check token in db
+		// compare poll id?
+		// check if poll expired (maybe another mid)
+
+		authorizationHeader := r.Header.Get("Authorization")
+		if authorizationHeader == "" {
+			app.invalidTokenResponse(w, r)
+			return
+		}
+
+		headerParts := strings.Split(authorizationHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			app.invalidTokenResponse(w, r)
+			return
+		}
+
+		token := headerParts[1]
+
+		v := validator.New()
+
+		if data.ValidateTokenPlaintext(v, token); !v.Valid() {
+			app.invalidTokenResponse(w, r)
+			return
+		}
+
+		pollID, err := app.models.Polls.CheckToken(token)
+		if err != nil {
+			app.invalidTokenResponse(w, r)
+			return
+		}
+
+		paramPollID, err := app.readIDParam(r, "pollID")
+		if err != nil {
+			app.badRequestResponse(w, r, err)
+			return
+		}
+
+		if pollID != paramPollID {
+			app.invalidTokenResponse(w, r)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "pollID", pollID)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
