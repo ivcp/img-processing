@@ -121,7 +121,7 @@ func TestPollsInsert(t *testing.T) {
 		},
 	}
 
-	token, err := generateToken()
+	token, err := GenerateToken()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,7 +378,7 @@ func TestPollGetVotedIPs(t *testing.T) {
 		},
 	}
 
-	token, _ := generateToken()
+	token, _ := GenerateToken()
 	_ = testModels.Polls.Insert(&poll, token.Hash)
 
 	// options will have ids 5 and 6
@@ -403,7 +403,7 @@ func TestPollGetVotedIPs(t *testing.T) {
 		t.Errorf("expected empty slice on non existent poll, but got %s", ips)
 	}
 
-	token, _ = generateToken()
+	token, _ = GenerateToken()
 	_ = testModels.Polls.Insert(&poll, token.Hash)
 	ips, err = testModels.Polls.GetVotedIPs(3)
 	if err != nil {
@@ -430,7 +430,7 @@ func TestPollGetAll(t *testing.T) {
 			{Value: fmt.Sprintf("Option two, poll %c", 96+i), Position: 1},
 			{Value: fmt.Sprintf("Option three, poll %c", 96+i), Position: 2},
 		}
-		token, _ := generateToken()
+		token, _ := GenerateToken()
 		if err := testModels.Polls.Insert(&poll, token.Hash); err != nil {
 			t.Fatalf("get all polls - insert poll returned an error: %s", err)
 		}

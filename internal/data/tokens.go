@@ -13,7 +13,7 @@ type Token struct {
 	Hash      []byte
 }
 
-func generateToken() (*Token, error) {
+func GenerateToken() (*Token, error) {
 	var token Token
 
 	randomBytes := make([]byte, 16)
