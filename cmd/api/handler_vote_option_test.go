@@ -13,29 +13,52 @@ import (
 func Test_app_voteOptionHandler(t *testing.T) {
 	tests := []struct {
 		name           string
-		id             string
+		pollID         string
 		ip             string
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			name:           "valid vote",
+			pollID:         "1",
 			ip:             "0.0.0.0:0",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "vote successful",
 		},
 		{
 			name:           "ip already voted",
+			pollID:         "1",
 			ip:             "0.0.0.1:0",
 			expectedStatus: http.StatusForbidden,
 			expectedBody:   "you have already voted on this poll",
+		},
+		{
+			name:           "expired poll",
+			pollID:         "33",
+			ip:             "0.0.0.0:0",
+			expectedStatus: http.StatusForbidden,
+			expectedBody:   "poll has expired",
+		},
+		{
+			name:           "expired not set",
+			pollID:         "34",
+			ip:             "0.0.0.0:0",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "vote successful",
+		},
+		{
+			name:           "unexisting poll",
+			pollID:         "99",
+			ip:             "0.0.0.0:0",
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "the requested resource could not be found",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPost, "/", nil)
 			chiCtx := chi.NewRouteContext()
-			chiCtx.URLParams.Add("pollID", "1")
+			chiCtx.URLParams.Add("pollID", test.pollID)
 			chiCtx.URLParams.Add("optionID", "1")
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			req.RemoteAddr = test.ip

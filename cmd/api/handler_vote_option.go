@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/ivcp/polls/internal/data"
 )
@@ -15,7 +16,7 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	_, err = app.models.Polls.Get(pollID)
+	poll, err := app.models.Polls.Get(pollID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -29,6 +30,11 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 	optionID, err := app.readIDParam(r, "optionID")
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if !poll.ExpiresAt.Time.IsZero() && poll.ExpiresAt.Time.Before(time.Now()) {
+		app.pollExpiredResponse(w, r)
 		return
 	}
 
