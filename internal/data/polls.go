@@ -124,7 +124,8 @@ func (p PollModel) Get(id int) (*Poll, error) {
 
 	query := `
 		SELECT p.id, p. question, p.description, p.created_at, 
-		p.updated_at, p.expires_at, po.id, po.value, po.position
+		p.updated_at, p.expires_at, p.results_visibility, po.id, 
+		po.value, po.position
 		FROM polls p
 		JOIN poll_options po ON po.poll_id = p.id 
 		WHERE p.id = $1;
@@ -156,12 +157,14 @@ func (p PollModel) Get(id int) (*Poll, error) {
 				&poll.CreatedAt,
 				&poll.UpdatedAt,
 				&poll.ExpiresAt.Time,
+				&poll.ResultsVisibility,
 				&option.ID,
 				&option.Value,
 				&option.Position,
 			)
 		default:
 			err = rows.Scan(
+				nil,
 				nil,
 				nil,
 				nil,
