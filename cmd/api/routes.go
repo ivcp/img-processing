@@ -22,12 +22,15 @@ func (app *application) routes() http.Handler {
 
 	mux.Group(func(mux chi.Router) {
 		mux.Use(app.requireToken)
-		mux.Patch("/v1/polls/{pollID}", app.updatePollHandler)
 		mux.Delete("/v1/polls/{pollID}", app.deletePollHandler)
-		mux.Post("/v1/polls/{pollID}/options", app.addOptionHandler)
-		mux.Patch("/v1/polls/{pollID}/options/{optionID}", app.updateOptionValueHandler)
-		mux.Patch("/v1/polls/{pollID}/options", app.updateOptionPositionHandler)
-		mux.Delete("/v1/polls/{pollID}/options/{optionID}", app.deleteOptionHandler)
+		mux.Group(func(mux chi.Router) {
+			mux.Use(app.checkPollExpired)
+			mux.Patch("/v1/polls/{pollID}", app.updatePollHandler)
+			mux.Post("/v1/polls/{pollID}/options", app.addOptionHandler)
+			mux.Patch("/v1/polls/{pollID}/options/{optionID}", app.updateOptionValueHandler)
+			mux.Patch("/v1/polls/{pollID}/options", app.updateOptionPositionHandler)
+			mux.Delete("/v1/polls/{pollID}/options/{optionID}", app.deleteOptionHandler)
+		})
 	})
 
 	return mux
