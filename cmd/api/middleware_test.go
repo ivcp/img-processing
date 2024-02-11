@@ -106,6 +106,7 @@ func Test_app_checkPollExpired(t *testing.T) {
 		{"expired poll", 33, http.StatusForbidden},
 		{"valid poll", 1, http.StatusOK},
 		{"unexisting poll", 99, http.StatusNotFound},
+		{"expired_at not set", 34, http.StatusOK},
 	}
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handlerToTest := app.checkPollExpired(nextHandler)

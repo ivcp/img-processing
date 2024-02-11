@@ -133,7 +133,7 @@ func (app *application) checkPollExpired(next http.Handler) http.Handler {
 			return
 		}
 
-		if poll.ExpiresAt.Time.Before(time.Now()) {
+		if !poll.ExpiresAt.Time.IsZero() && poll.ExpiresAt.Time.Before(time.Now()) {
 			app.pollExpiredResponse(w, r)
 			return
 		}
