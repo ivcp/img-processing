@@ -17,12 +17,28 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 			Value    string `json:"value"`
 			Position int    `json:"position"`
 		} `json:"options"`
-		ExpiresAt data.ExpiresAt `json:"expires_at"`
+		ExpiresAt         data.ExpiresAt `json:"expires_at"`
+		ResultsVisibility string         `json:"results_visibility"`
 	}
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.ResultsVisibility == "" {
+		input.ResultsVisibility = "always"
+	}
+
+	showResults := data.ShowResults{
+		Value:         input.ResultsVisibility,
+		ValueSafelist: []string{"always", "after_vote", "after_deadline"},
+	}
+
+	v := validator.New()
+	if data.ValidateShowResults(v, showResults); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
@@ -32,13 +48,13 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	poll := &data.Poll{
-		Question:    strings.TrimSpace(input.Question),
-		Description: strings.TrimSpace(input.Description),
-		Options:     options,
-		ExpiresAt:   input.ExpiresAt,
+		Question:          strings.TrimSpace(input.Question),
+		Description:       strings.TrimSpace(input.Description),
+		Options:           options,
+		ExpiresAt:         input.ExpiresAt,
+		ResultsVisibility: showResults.Value,
 	}
 
-	v := validator.New()
 	if data.ValidatePoll(v, poll); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
