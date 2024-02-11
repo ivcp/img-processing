@@ -11,35 +11,31 @@ import (
 func Test_app_updateOptionPositionHandler(t *testing.T) {
 	tests := []struct {
 		name           string
-		id             int
 		json           string
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			"valid update positions",
-			1,
 			`{"options":[{"id":1, "position":1}, {"id":2, "position":0}]}`,
 			http.StatusOK,
 			"options updated successfully",
 		},
 		{
 			"invalid option id",
-			1,
+
 			`{"options":[{"id":1, "position":1}, {"id":9, "position":0}]}`,
 			http.StatusBadRequest,
 			"invalid option id, or no id provided",
 		},
 		{
 			"invalid position change",
-			1,
 			`{"options":[{"id":1, "position":1}]}`,
 			http.StatusUnprocessableEntity,
 			"positions must be unique",
 		},
 		{
 			"no options provided",
-			1,
 			`{"options":[]}`,
 			http.StatusBadRequest,
 			"invalid option id, or no id provided",
@@ -49,8 +45,8 @@ func Test_app_updateOptionPositionHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPatch, "/", strings.NewReader(test.json))
-
-			req = req.WithContext(context.WithValue(req.Context(), "pollID", test.id))
+			poll, _ := app.models.Polls.Get(1)
+			req = req.WithContext(context.WithValue(req.Context(), "poll", poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.updateOptionPositionHandler)
 			handler.ServeHTTP(rr, req)
