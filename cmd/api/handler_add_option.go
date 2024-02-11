@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/ivcp/polls/internal/data"
@@ -9,25 +8,14 @@ import (
 )
 
 func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request) {
-	pollID := r.Context().Value("pollID").(int)
-
-	poll, err := app.models.Polls.Get(pollID)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
+	poll := r.Context().Value("poll").(*data.Poll)
 
 	var input struct {
 		Value    string `json:"value"`
 		Position int    `json:"position"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -47,7 +35,7 @@ func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = app.models.PollOptions.Insert(newOption, pollID)
+	err = app.models.PollOptions.Insert(newOption, poll.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

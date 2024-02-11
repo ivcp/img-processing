@@ -11,45 +11,39 @@ import (
 func Test_app_addOptionHandler(t *testing.T) {
 	tests := []struct {
 		name           string
-		id             int
+		pollID         int
 		json           string
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			name:           "valid add option",
-			id:             1,
+			pollID:         1,
 			json:           `{"value":"test", "position":3}`,
 			expectedStatus: http.StatusCreated,
 			expectedBody:   "option added successfully",
 		},
 		{
 			name:           "option already exists",
-			id:             1,
+			pollID:         1,
 			json:           `{"value":"Two", "position":2}`,
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   "must not contain duplicate values",
 		},
 		{
 			name:           "position not unique",
-			id:             1,
+			pollID:         1,
 			json:           `{"value":"test", "position":1}`,
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   "positions must be unique",
-		},
-		{
-			name:           "unexisting poll",
-			id:             9,
-			json:           `{"value":"test", "position":2}`,
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "the requested resource could not be found",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPost, "/", strings.NewReader(test.json))
-			req = req.WithContext(context.WithValue(req.Context(), "pollID", test.id))
+			poll, _ := app.models.Polls.Get(test.pollID)
+			req = req.WithContext(context.WithValue(req.Context(), "poll", poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.addOptionHandler)
 			handler.ServeHTTP(rr, req)
