@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/ivcp/polls/internal/data"
@@ -9,17 +8,7 @@ import (
 )
 
 func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Request) {
-	pollID := r.Context().Value("pollID").(int)
-	poll, err := app.models.Polls.Get(pollID)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
+	poll := r.Context().Value("poll").(*data.Poll)
 
 	optionID, err := app.readIDParam(r, "optionID")
 	if err != nil {
