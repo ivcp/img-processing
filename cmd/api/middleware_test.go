@@ -96,3 +96,30 @@ func Test_app_requireToken(t *testing.T) {
 		})
 	}
 }
+
+func Test_app_checkPollExpired(t *testing.T) {
+	tests := []struct {
+		name           string
+		pollID         int
+		expectedStatus int
+	}{
+		{"expired poll", 33, http.StatusForbidden},
+		{"valid poll", 1, http.StatusOK},
+		{"unexisting poll", 99, http.StatusNotFound},
+	}
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handlerToTest := app.checkPollExpired(nextHandler)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+			req = req.WithContext(context.WithValue(req.Context(), "pollID", test.pollID))
+			rr := httptest.NewRecorder()
+			handlerToTest.ServeHTTP(rr, req)
+
+			if rr.Code != test.expectedStatus {
+				t.Errorf("expected status %d, but got %d", test.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
