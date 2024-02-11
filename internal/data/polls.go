@@ -123,8 +123,7 @@ func (p PollModel) Get(id int) (*Poll, error) {
 
 	query := `
 		SELECT p.id, p. question, p.description, p.created_at, 
-		p.updated_at, p.expires_at, po.id, po.value, 
-		po.position, po.vote_count
+		p.updated_at, p.expires_at, po.id, po.value, po.position
 		FROM polls p
 		JOIN poll_options po ON po.poll_id = p.id 
 		WHERE p.id = $1;
@@ -159,7 +158,6 @@ func (p PollModel) Get(id int) (*Poll, error) {
 				&option.ID,
 				&option.Value,
 				&option.Position,
-				&option.VoteCount,
 			)
 		default:
 			err = rows.Scan(
@@ -172,7 +170,6 @@ func (p PollModel) Get(id int) (*Poll, error) {
 				&option.ID,
 				&option.Value,
 				&option.Position,
-				&option.VoteCount,
 			)
 		}
 
@@ -249,7 +246,7 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, er
 		SELECT count(*) OVER(), p.id, p.question, p.description, 
 		p.created_at, p.updated_at, p.expires_at,
 	    jsonb_agg(jsonb_build_object(
-			'id', po.id, 'value', po.value, 'position', po.position, 'vote_count', po.vote_count
+			'id', po.id, 'value', po.value, 'position', po.position
 			)) AS options
 		FROM polls p
 		JOIN poll_options po ON po.poll_id = p.id 

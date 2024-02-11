@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package data
 
@@ -312,8 +312,25 @@ func TestPollOptionsVote(t *testing.T) {
 		t.Errorf("vote option returned an error: %s", err)
 	}
 
-	poll, _ := testModels.Polls.Get(1)
-	for _, opt := range poll.Options {
+	query := `
+		SELECT id, vote_count
+		FROM poll_options
+		WHERE poll_id = $1;
+	`
+
+	rows, err := testDB.Query(context.Background(), query, 1)
+	if err != nil {
+		t.Errorf("getting votes returned an error: %s", err)
+	}
+	var options []*PollOption
+
+	for rows.Next() {
+		var opt PollOption
+		rows.Scan(&opt.ID, &opt.VoteCount)
+		options = append(options, &opt)
+	}
+
+	for _, opt := range options {
 		if opt.ID == 1 && opt.VoteCount != 1 {
 			t.Errorf("expected vote count to increase by one, but it didn't: vote_count %d", opt.VoteCount)
 		}
@@ -321,8 +338,20 @@ func TestPollOptionsVote(t *testing.T) {
 
 	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
 	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
-	poll, _ = testModels.Polls.Get(1)
-	for _, opt := range poll.Options {
+
+	rows, err = testDB.Query(context.Background(), query, 1)
+	if err != nil {
+		t.Errorf("getting votes returned an error: %s", err)
+	}
+	var options2 []*PollOption
+
+	for rows.Next() {
+		var opt PollOption
+		rows.Scan(&opt.ID, &opt.VoteCount)
+		options2 = append(options2, &opt)
+	}
+
+	for _, opt := range options2 {
 		if opt.ID == 1 && opt.VoteCount != 3 {
 			t.Errorf("expected vote count to be 3, but got %d", opt.VoteCount)
 		}

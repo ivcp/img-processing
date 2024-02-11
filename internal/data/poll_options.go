@@ -15,7 +15,7 @@ type PollOption struct {
 	Value string `json:"value"`
 	// Position of option in the list, starting at 0
 	Position  int `json:"position"`
-	VoteCount int `json:"vote_count"`
+	VoteCount int `json:"-"`
 }
 
 type PollOptionModel struct {
