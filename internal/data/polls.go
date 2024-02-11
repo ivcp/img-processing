@@ -15,14 +15,15 @@ import (
 )
 
 type Poll struct {
-	ID          int           `json:"id"`
-	Question    string        `json:"question"`
-	Description string        `json:"description"`
-	Options     []*PollOption `json:"options"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
-	ExpiresAt   ExpiresAt     `json:"expires_at"`
-	Token       string        `json:"token,omitempty"`
+	ID                int           `json:"id"`
+	Question          string        `json:"question"`
+	Description       string        `json:"description"`
+	Options           []*PollOption `json:"options"`
+	CreatedAt         time.Time     `json:"created_at"`
+	UpdatedAt         time.Time     `json:"updated_at"`
+	ExpiresAt         ExpiresAt     `json:"expires_at"`
+	Token             string        `json:"token,omitempty"`
+	ResultsVisibility string        `json:"-"`
 }
 
 type PollModel struct {
@@ -31,12 +32,12 @@ type PollModel struct {
 
 func (p PollModel) Insert(poll *Poll, tokenHash []byte) error {
 	query := `
-		INSERT INTO polls (question, description, expires_at)
-		VALUES ($1, $2, $3)
+		INSERT INTO polls (question, description, expires_at, results_visibility)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at, updated_at;				
 		`
 
-	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time}
+	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time, poll.ResultsVisibility}
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
