@@ -52,8 +52,8 @@ func (app *application) pollExpiredResponse(w http.ResponseWriter, r *http.Reque
 	app.errorJSONResponse(w, r, http.StatusForbidden, message)
 }
 
-func (app *application) cannotShowResultsResponse(w http.ResponseWriter, r *http.Request) {
-	message := "results will be available after voting or when poll expires"
+func (app *application) cannotShowResultsResponse(w http.ResponseWriter, r *http.Request, msg string) {
+	message := "results will be available " + msg
 	app.errorJSONResponse(w, r, http.StatusForbidden, message)
 }
 
