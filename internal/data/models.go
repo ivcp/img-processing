@@ -32,6 +32,7 @@ type PollOptions interface {
 	UpdatePosition(options []*PollOption) error
 	Vote(optionID int, ip string) error
 	Delete(optionID int) error
+	GetResults(pollID int) ([]*PollOption, error)
 }
 
 func NewModels(db *pgxpool.Pool) Models {

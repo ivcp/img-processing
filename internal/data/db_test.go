@@ -312,24 +312,7 @@ func TestPollOptionsVote(t *testing.T) {
 		t.Errorf("vote option returned an error: %s", err)
 	}
 
-	query := `
-		SELECT id, vote_count
-		FROM poll_options
-		WHERE poll_id = $1;
-	`
-
-	rows, err := testDB.Query(context.Background(), query, 1)
-	if err != nil {
-		t.Errorf("getting votes returned an error: %s", err)
-	}
-	var options []*PollOption
-
-	for rows.Next() {
-		var opt PollOption
-		rows.Scan(&opt.ID, &opt.VoteCount)
-		options = append(options, &opt)
-	}
-
+	options, _ := testModels.PollOptions.GetResults(1)
 	for _, opt := range options {
 		if opt.ID == 1 && opt.VoteCount != 1 {
 			t.Errorf("expected vote count to increase by one, but it didn't: vote_count %d", opt.VoteCount)
@@ -339,19 +322,8 @@ func TestPollOptionsVote(t *testing.T) {
 	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
 	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
 
-	rows, err = testDB.Query(context.Background(), query, 1)
-	if err != nil {
-		t.Errorf("getting votes returned an error: %s", err)
-	}
-	var options2 []*PollOption
-
-	for rows.Next() {
-		var opt PollOption
-		rows.Scan(&opt.ID, &opt.VoteCount)
-		options2 = append(options2, &opt)
-	}
-
-	for _, opt := range options2 {
+	options, _ = testModels.PollOptions.GetResults(1)
+	for _, opt := range options {
 		if opt.ID == 1 && opt.VoteCount != 3 {
 			t.Errorf("expected vote count to be 3, but got %d", opt.VoteCount)
 		}
@@ -359,6 +331,28 @@ func TestPollOptionsVote(t *testing.T) {
 
 	if err := testModels.PollOptions.Vote(99, "0.0.0.0"); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent option")
+	}
+}
+
+func TestGetResults(t *testing.T) {
+	options, err := testModels.PollOptions.GetResults(1)
+	if err != nil {
+		t.Errorf("getting votes returned an error: %s", err)
+	}
+	for _, opt := range options {
+		if opt.ID == 1 && opt.VoteCount != 3 {
+			t.Errorf("expected vote count to be 3, but got %d", opt.VoteCount)
+		}
+		if opt.ID != 1 && opt.VoteCount != 0 {
+			t.Errorf("expected vote count to be 0, but got %d", opt.VoteCount)
+		}
+	}
+	options, err = testModels.PollOptions.GetResults(99)
+	if err != nil {
+		t.Errorf("getting votes returned an error: %s", err)
+	}
+	if len(options) != 0 {
+		t.Errorf("expected len of options to be 0, but got %d", len(options))
 	}
 }
 

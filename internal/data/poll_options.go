@@ -142,6 +142,41 @@ func (p PollOptionModel) Vote(optionID int, ip string) error {
 	return nil
 }
 
+func (p PollOptionModel) GetResults(pollID int) ([]*PollOption, error) {
+	query := `
+		SELECT id, value, position, vote_count
+		FROM poll_options
+		WHERE poll_id = $1;
+	`
+
+	rows, err := p.DB.Query(context.Background(), query, pollID)
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("get votes for poll: %w", err)
+	}
+	var options []*PollOption
+
+	for rows.Next() {
+		var opt PollOption
+		err := rows.Scan(
+			&opt.ID,
+			&opt.Value,
+			&opt.Position,
+			&opt.VoteCount,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("get votes for poll - scan: %w", err)
+		}
+		options = append(options, &opt)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("get votes for poll: %w", err)
+	}
+
+	return options, nil
+}
+
 func (p PollOptionModel) setUpdatedAt(pollID int) error {
 	query := `
 		UPDATE polls
@@ -181,4 +216,8 @@ func (p MockPollOptionModel) Delete(optionID int) error {
 
 func (p MockPollOptionModel) Vote(optionID int, ip string) error {
 	return nil
+}
+
+func (p MockPollOptionModel) GetResults(pollID int) ([]*PollOption, error) {
+	return nil, nil
 }
