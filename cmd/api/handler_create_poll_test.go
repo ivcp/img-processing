@@ -155,6 +155,34 @@ func Test_app_createPollHandler(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 			expectedBody:   `{"poll":{"id":1,"question":"Test?"`,
 		},
+		{
+			name: "invalid results_visibility",
+			json: fmt.Sprintf(
+				`{
+					"question":"Test?", 
+					"options":[{"value":"first","position":0}, {"value":"second","position":1}],
+					"expires_at":%q,
+					"results_visibility": "test"
+					}`,
+				expiresValid,
+			),
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   `{"error":{"results_visibility":"invalid results_visibility value"}}`,
+		},
+		{
+			name: "valid results_visibility",
+			json: fmt.Sprintf(
+				`{
+					"question":"Test?", 
+					"options":[{"value":"first","position":0}, {"value":"second","position":1}],
+					"expires_at":%q,
+					"results_visibility": "after_deadline"
+					}`,
+				expiresValid,
+			),
+			expectedStatus: http.StatusCreated,
+			expectedBody:   `{"poll":{"id":1,"question":"Test?"`,
+		},
 	}
 
 	for _, test := range tests {

@@ -31,13 +31,13 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		input.ResultsVisibility = "always"
 	}
 
-	showResults := data.ShowResults{
+	showResults := data.ResultsVisibility{
 		Value:         input.ResultsVisibility,
 		ValueSafelist: []string{"always", "after_vote", "after_deadline"},
 	}
 
 	v := validator.New()
-	if data.ValidateShowResults(v, showResults); !v.Valid() {
+	if data.ValidateResultsVisibility(v, showResults); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
