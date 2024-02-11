@@ -13,7 +13,7 @@ import (
 func Test_app_updateOptionValueHandler(t *testing.T) {
 	tests := []struct {
 		name           string
-		id             string
+		optionID       string
 		json           string
 		expectedStatus int
 		expectedBody   string
@@ -27,9 +27,10 @@ func Test_app_updateOptionValueHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPatch, "/", strings.NewReader(test.json))
 			chiCtx := chi.NewRouteContext()
-			chiCtx.URLParams.Add("optionID", test.id)
-			req = req.WithContext(context.WithValue(req.Context(), "pollID", 1))
+			chiCtx.URLParams.Add("optionID", test.optionID)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+			poll, _ := app.models.Polls.Get(1)
+			req = req.WithContext(context.WithValue(req.Context(), "poll", poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.updateOptionValueHandler)
 			handler.ServeHTTP(rr, req)
