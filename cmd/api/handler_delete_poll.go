@@ -23,6 +23,5 @@ func (app *application) deletePollHandler(w http.ResponseWriter, r *http.Request
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "poll successfully deleted"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
 	}
 }

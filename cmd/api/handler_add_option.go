@@ -56,6 +56,5 @@ func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request)
 	err = app.writeJSON(w, http.StatusCreated, envelope{"message": "option added successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
 	}
 }

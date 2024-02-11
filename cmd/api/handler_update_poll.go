@@ -67,6 +67,5 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 	err = app.writeJSON(w, http.StatusOK, envelope{"poll": poll}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
 	}
 }

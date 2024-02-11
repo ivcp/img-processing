@@ -75,6 +75,5 @@ func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Reque
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "option deleted successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
 	}
 }

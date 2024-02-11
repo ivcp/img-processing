@@ -41,6 +41,5 @@ func (app *application) listPollsHandler(w http.ResponseWriter, r *http.Request)
 		nil,
 	); err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
 	}
 }

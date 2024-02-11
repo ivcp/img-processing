@@ -65,6 +65,5 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "vote successful"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
 	}
 }

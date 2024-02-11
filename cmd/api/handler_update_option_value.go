@@ -70,6 +70,5 @@ func (app *application) updateOptionValueHandler(w http.ResponseWriter, r *http.
 	err = app.writeJSON(w, http.StatusCreated, envelope{"message": "option updated successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
 	}
 }
