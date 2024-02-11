@@ -47,6 +47,11 @@ func (app *application) cannotVoteResponse(w http.ResponseWriter, r *http.Reques
 	app.errorJSONResponse(w, r, http.StatusForbidden, message)
 }
 
+func (app *application) pollExpiredResponse(w http.ResponseWriter, r *http.Request) {
+	message := "poll has expired"
+	app.errorJSONResponse(w, r, http.StatusForbidden, message)
+}
+
 func (app *application) invalidTokenResponse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", "Bearer")
 	message := "invalid or missing token"
