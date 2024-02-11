@@ -148,7 +148,7 @@ func TestPollsInsert(t *testing.T) {
 		if errors.Is(err, ErrRecordNotFound) {
 			t.Errorf("token hash not inserted")
 		} else {
-			t.Errorf("insert poll returned an error: %s", err)
+			t.Errorf("check token returned an error: %s", err)
 		}
 	}
 }
