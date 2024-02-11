@@ -24,6 +24,7 @@ func Test_app_routes(t *testing.T) {
 		{"/v1/polls/{pollID}/options/{optionID}", http.MethodPatch},
 		{"/v1/polls/{pollID}/options/{optionID}", http.MethodDelete},
 		{"/v1/polls/{pollID}/options", http.MethodPatch},
+		{"/v1/polls/{pollID}/results", http.MethodGet},
 	}
 	testMux := app.routes()
 	chiRoutes := testMux.(chi.Routes)
