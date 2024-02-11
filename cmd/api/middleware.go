@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -73,13 +75,6 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 func (app *application) requireToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO:
-		// check if token exists
-		// validate token
-		// check token in db
-		// compare poll id?
-		// check if poll expired (maybe another mid)
-
 		authorizationHeader := r.Header.Get("Authorization")
 		if authorizationHeader == "" {
 			app.invalidTokenResponse(w, r)
@@ -114,12 +109,36 @@ func (app *application) requireToken(next http.Handler) http.Handler {
 		}
 
 		if pollID != paramPollID {
-			app.invalidTokenResponse(w, r)
+			app.badRequestResponse(w, r, fmt.Errorf("token not valid for this poll"))
 			return
 		}
 
 		ctx := context.WithValue(r.Context(), "pollID", pollID)
 
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (app *application) checkPollExpired(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.Context().Value("pollID").(int)
+		poll, err := app.models.Polls.Get(id)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		if poll.ExpiresAt.Time.Before(time.Now()) {
+			app.pollExpiredResponse(w, r)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "poll", poll)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
