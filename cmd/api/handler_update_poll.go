@@ -10,17 +10,7 @@ import (
 )
 
 func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("pollID").(int)
-	poll, err := app.models.Polls.Get(id)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
+	poll := r.Context().Value("poll").(*data.Poll)
 
 	var input struct {
 		Question    *string        `json:"question"`
@@ -28,7 +18,7 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 		ExpiresAt   data.ExpiresAt `json:"expires_at"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
