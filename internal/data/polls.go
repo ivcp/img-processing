@@ -387,6 +387,19 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 		}
 		return &poll, nil
 	}
+	// expired poll
+	if id == 33 {
+		poll := Poll{
+			ID:        1,
+			Question:  "Test?",
+			ExpiresAt: ExpiresAt{time.Now().Add(-1 * time.Minute)},
+			Options: []*PollOption{
+				{ID: 1, Value: "One", Position: 0},
+				{ID: 2, Value: "Two", Position: 1},
+			},
+		}
+		return &poll, nil
+	}
 	return nil, ErrRecordNotFound
 }
 
