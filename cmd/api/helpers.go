@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -113,4 +114,20 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 	}
 
 	return i
+}
+
+func (app *application) checkIP(r *http.Request, pollID int, ip string) (bool, error) {
+	ips, err := app.models.Polls.GetVotedIPs(pollID)
+	if err != nil {
+		return false, fmt.Errorf("checkIP %s", err)
+	}
+
+	voted := false
+	for _, storedIP := range ips {
+		if storedIP.Equal(net.ParseIP(ip)) {
+			voted = true
+		}
+	}
+
+	return voted, nil
 }
