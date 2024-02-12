@@ -27,32 +27,19 @@ func (app *application) showResultsHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// TODO: test
-
 	switch poll.ResultsVisibility {
 	case "after_vote":
 		if poll.ExpiresAt.Time.Before(time.Now()) {
-
-			// TODO: refactor return true if voted
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
 			}
-
-			ips, err := app.models.Polls.GetVotedIPs(pollID)
+			voted, err := app.checkIP(r, pollID, ip)
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
 			}
-
-			voted := false
-			for _, storedIP := range ips {
-				if storedIP.Equal(net.ParseIP(ip)) {
-					voted = true
-				}
-			}
-
 			if !voted {
 				app.cannotShowResultsResponse(w, r, "after voting")
 				return
