@@ -25,7 +25,6 @@ func (app *application) routes() http.Handler {
 		mux.Use(app.requireToken)
 		mux.Delete("/v1/polls/{pollID}", app.deletePollHandler)
 		mux.Group(func(mux chi.Router) {
-			mux.Use(app.oneRequestAtATime)
 			mux.Use(app.checkPollExpired)
 			mux.Patch("/v1/polls/{pollID}", app.updatePollHandler)
 			mux.Post("/v1/polls/{pollID}/options", app.addOptionHandler)
