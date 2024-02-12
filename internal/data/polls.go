@@ -399,6 +399,19 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 	if id == 34 {
 		return &Poll{}, nil
 	}
+	// results after vote
+	if id == 35 {
+		return &Poll{
+			ResultsVisibility: "after_vote",
+		}, nil
+	}
+	// results after deadline
+	if id == 36 {
+		return &Poll{
+			ExpiresAt:         ExpiresAt{time.Now().Add(1 * time.Minute)},
+			ResultsVisibility: "after_deadline",
+		}, nil
+	}
 	return nil, ErrRecordNotFound
 }
 
