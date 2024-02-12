@@ -142,3 +142,13 @@ func (app *application) checkPollExpired(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func (app *application) oneRequestAtATime(next http.Handler) http.Handler {
+	var m sync.Mutex
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		m.Lock()
+		defer m.Unlock()
+		next.ServeHTTP(w, r)
+	})
+}
