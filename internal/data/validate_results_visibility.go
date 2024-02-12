@@ -8,5 +8,7 @@ type ResultsVisibility struct {
 }
 
 func ValidateResultsVisibility(v *validator.Validator, f ResultsVisibility) {
-	v.Check(validator.PermittedValue(f.Value, f.ValueSafelist...), "results_visibility", "invalid results_visibility value")
+	v.Check(validator.PermittedValue(
+		f.Value, f.ValueSafelist...,
+	), "results_visibility", "invalid results_visibility value")
 }
