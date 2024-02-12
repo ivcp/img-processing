@@ -44,17 +44,14 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	ips, err := app.models.Polls.GetVotedIPs(pollID)
+	voted, err := app.checkIP(r, pollID, ip)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-
-	for _, storedIP := range ips {
-		if storedIP.Equal(net.ParseIP(ip)) {
-			app.cannotVoteResponse(w, r)
-			return
-		}
+	if voted {
+		app.cannotVoteResponse(w, r)
+		return
 	}
 
 	err = app.models.PollOptions.Vote(optionID, ip)
