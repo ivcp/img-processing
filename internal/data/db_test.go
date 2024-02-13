@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package data
 
@@ -307,7 +307,7 @@ func TestPollOptionsUpdatePosition(t *testing.T) {
 }
 
 func TestPollOptionsVote(t *testing.T) {
-	err := testModels.PollOptions.Vote(1, "0.0.0.0")
+	err := testModels.PollOptions.Vote(1, 1, "0.0.0.0")
 	if err != nil {
 		t.Errorf("vote option returned an error: %s", err)
 	}
@@ -319,8 +319,8 @@ func TestPollOptionsVote(t *testing.T) {
 		}
 	}
 
-	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
-	_ = testModels.PollOptions.Vote(1, "0.0.0.0")
+	_ = testModels.PollOptions.Vote(1, 1, "0.0.0.0")
+	_ = testModels.PollOptions.Vote(1, 1, "0.0.0.0")
 
 	options, _ = testModels.PollOptions.GetResults(1)
 	for _, opt := range options {
@@ -329,9 +329,25 @@ func TestPollOptionsVote(t *testing.T) {
 		}
 	}
 
-	if err := testModels.PollOptions.Vote(99, "0.0.0.0"); !errors.Is(err, ErrRecordNotFound) {
+	if err := testModels.PollOptions.Vote(99, 1, "0.0.0.0"); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent option")
 	}
+
+	poll := Poll{
+		Question: "votes",
+		Options: []*PollOption{
+			{Value: "One", Position: 0},
+			{Value: "Two", Position: 1},
+		},
+	}
+
+	token, _ := GenerateToken()
+	_ = testModels.Polls.Insert(&poll, token.Hash)
+
+	if err = testModels.PollOptions.Vote(1, 2, "0.0.0.0"); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on post and option id mismatch")
+	}
+	_ = testModels.Polls.Delete(2)
 }
 
 func TestGetResults(t *testing.T) {
@@ -367,13 +383,13 @@ func TestPollOptionsDelete(t *testing.T) {
 		t.Errorf("expected len of options to be 3 but got %d", len(poll.Options))
 	}
 
-	if err := testModels.PollOptions.Delete(5); !errors.Is(err, ErrRecordNotFound) {
+	if err := testModels.PollOptions.Delete(99); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent option")
 	}
 }
 
 func TestPollsDelete(t *testing.T) {
-	if err := testModels.Polls.Delete(10); !errors.Is(err, ErrRecordNotFound) {
+	if err := testModels.Polls.Delete(99); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent poll")
 	}
 	if err := testModels.Polls.Delete(0); !errors.Is(err, ErrRecordNotFound) {
@@ -401,12 +417,12 @@ func TestPollGetVotedIPs(t *testing.T) {
 	token, _ := GenerateToken()
 	_ = testModels.Polls.Insert(&poll, token.Hash)
 
-	// options will have ids 5 and 6
-	_ = testModels.PollOptions.Vote(5, "0.0.0.1")
-	_ = testModels.PollOptions.Vote(5, "0.0.0.2")
-	_ = testModels.PollOptions.Vote(6, "0.0.0.3")
+	// poll will have id 3, and options 7 and 8
+	_ = testModels.PollOptions.Vote(7, 3, "0.0.0.1")
+	_ = testModels.PollOptions.Vote(7, 3, "0.0.0.2")
+	_ = testModels.PollOptions.Vote(8, 3, "0.0.0.3")
 
-	ips, err := testModels.Polls.GetVotedIPs(2)
+	ips, err := testModels.Polls.GetVotedIPs(3)
 	if err != nil {
 		t.Errorf("get ips returned an error: %s", err)
 	}
@@ -425,7 +441,7 @@ func TestPollGetVotedIPs(t *testing.T) {
 
 	token, _ = GenerateToken()
 	_ = testModels.Polls.Insert(&poll, token.Hash)
-	ips, err = testModels.Polls.GetVotedIPs(3)
+	ips, err = testModels.Polls.GetVotedIPs(4)
 	if err != nil {
 		t.Errorf("get ips returned an error: %s", err)
 	}
@@ -433,8 +449,8 @@ func TestPollGetVotedIPs(t *testing.T) {
 		t.Errorf("expected empty slice if poll without votes, but got %s", ips)
 	}
 
-	_ = testModels.Polls.Delete(2)
 	_ = testModels.Polls.Delete(3)
+	_ = testModels.Polls.Delete(4)
 }
 
 func TestPollGetAll(t *testing.T) {

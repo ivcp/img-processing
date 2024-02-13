@@ -105,24 +105,23 @@ func (p PollOptionModel) Delete(optionID int) error {
 	return p.setUpdatedAt(pollID)
 }
 
-func (p PollOptionModel) Vote(optionID int, ip string) error {
+func (p PollOptionModel) Vote(optionID int, pollID int, ip string) error {
 	query := `
 		UPDATE poll_options 
 		SET vote_count = vote_count + 1
-		WHERE id = $1
-		RETURNING poll_id;
+		WHERE id = $1 AND poll_id = $2;
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	var pollID int
-	err := p.DB.QueryRow(ctx, query, optionID).Scan(&pollID)
+	result, err := p.DB.Exec(ctx, query, optionID, pollID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrRecordNotFound
-		}
 		return fmt.Errorf("vote option: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrRecordNotFound
 	}
 
 	var paramIP pgtype.Inet
@@ -214,7 +213,7 @@ func (p MockPollOptionModel) Delete(optionID int) error {
 	return nil
 }
 
-func (p MockPollOptionModel) Vote(optionID int, ip string) error {
+func (p MockPollOptionModel) Vote(optionID int, pollID int, ip string) error {
 	return nil
 }
 
