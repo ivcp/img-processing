@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,8 +13,24 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
 )
+
+type contextKey string
+
+const (
+	ctxPollIDKey contextKey = "pollID"
+	ctxPollKey   contextKey = "poll"
+)
+
+func (app *application) pollIDfromContext(ctx context.Context) int {
+	return ctx.Value(ctxPollIDKey).(int)
+}
+
+func (app *application) pollFromContext(ctx context.Context) *data.Poll {
+	return ctx.Value(ctxPollKey).(*data.Poll)
+}
 
 func (app *application) readIDParam(r *http.Request, id string) (int, error) {
 	param := chi.URLParam(r, id)
