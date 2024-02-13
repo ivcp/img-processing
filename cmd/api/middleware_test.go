@@ -114,7 +114,7 @@ func Test_app_checkPollExpired(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, "/", nil)
-			req = req.WithContext(context.WithValue(req.Context(), "pollID", test.pollID))
+			req = req.WithContext(context.WithValue(req.Context(), ctxPollIDKey, test.pollID))
 			rr := httptest.NewRecorder()
 			handlerToTest.ServeHTTP(rr, req)
 

@@ -30,7 +30,7 @@ func Test_app_updateOptionValueHandler(t *testing.T) {
 			chiCtx.URLParams.Add("optionID", test.optionID)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			poll, _ := app.models.Polls.Get(1)
-			req = req.WithContext(context.WithValue(req.Context(), "poll", poll))
+			req = req.WithContext(context.WithValue(req.Context(), ctxPollKey, poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.updateOptionValueHandler)
 			handler.ServeHTTP(rr, req)

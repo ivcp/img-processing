@@ -9,7 +9,7 @@ import (
 )
 
 func (app *application) updateOptionPositionHandler(w http.ResponseWriter, r *http.Request) {
-	poll := r.Context().Value("poll").(*data.Poll)
+	poll := app.pollFromContext(r.Context())
 
 	var input struct {
 		Options []struct {

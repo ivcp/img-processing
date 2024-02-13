@@ -8,7 +8,7 @@ import (
 )
 
 func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Request) {
-	poll := r.Context().Value("poll").(*data.Poll)
+	poll := app.pollFromContext(r.Context())
 
 	optionID, err := app.readIDParam(r, "optionID")
 	if err != nil {

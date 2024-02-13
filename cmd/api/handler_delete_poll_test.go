@@ -22,7 +22,7 @@ func Test_app_deletePollHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodDelete, "/", nil)
-			req = req.WithContext(context.WithValue(req.Context(), "pollID", test.id))
+			req = req.WithContext(context.WithValue(req.Context(), ctxPollIDKey, test.id))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.deletePollHandler)
 			handler.ServeHTTP(rr, req)

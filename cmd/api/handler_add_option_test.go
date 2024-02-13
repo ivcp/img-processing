@@ -43,7 +43,7 @@ func Test_app_addOptionHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPost, "/", strings.NewReader(test.json))
 			poll, _ := app.models.Polls.Get(test.pollID)
-			req = req.WithContext(context.WithValue(req.Context(), "poll", poll))
+			req = req.WithContext(context.WithValue(req.Context(), ctxPollKey, poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.addOptionHandler)
 			handler.ServeHTTP(rr, req)

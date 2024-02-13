@@ -10,7 +10,7 @@ import (
 )
 
 func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request) {
-	poll := r.Context().Value("poll").(*data.Poll)
+	poll := app.pollFromContext(r.Context())
 
 	var input struct {
 		Question    *string        `json:"question"`

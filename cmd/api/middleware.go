@@ -109,7 +109,7 @@ func (app *application) requireToken(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "pollID", pollID)
+		ctx := context.WithValue(r.Context(), ctxPollIDKey, pollID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -120,7 +120,7 @@ func (app *application) checkPollExpired(next http.Handler) http.Handler {
 		app.mutex.Lock()
 		defer app.mutex.Unlock()
 
-		id := r.Context().Value("pollID").(int)
+		id := app.pollIDfromContext(r.Context())
 		poll, err := app.models.Polls.Get(id)
 		if err != nil {
 			switch {
@@ -137,7 +137,7 @@ func (app *application) checkPollExpired(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "poll", poll)
+		ctx := context.WithValue(r.Context(), ctxPollKey, poll)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

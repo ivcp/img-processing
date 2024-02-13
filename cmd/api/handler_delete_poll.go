@@ -8,7 +8,8 @@ import (
 )
 
 func (app *application) deletePollHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("pollID").(int)
+	id := app.pollIDfromContext(r.Context())
+
 	err := app.models.Polls.Delete(id)
 	if err != nil {
 		switch {

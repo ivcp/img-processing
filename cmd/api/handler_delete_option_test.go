@@ -28,7 +28,7 @@ func Test_app_deleteOptionHandler(t *testing.T) {
 			chiCtx.URLParams.Add("optionID", test.id)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			poll, _ := app.models.Polls.Get(1)
-			req = req.WithContext(context.WithValue(req.Context(), "poll", poll))
+			req = req.WithContext(context.WithValue(req.Context(), ctxPollKey, poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.deleteOptionHandler)
 			handler.ServeHTTP(rr, req)
