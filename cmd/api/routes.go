@@ -18,8 +18,8 @@ func (app *application) routes() http.Handler {
 	mux.Post("/v1/polls", app.createPollHandler)
 	mux.Get("/v1/polls", app.listPollsHandler)
 	mux.Get("/v1/polls/{pollID}", app.showPollHandler)
-	mux.Post("/v1/polls/{pollID}/options/{optionID}", app.voteOptionHandler)
 	mux.Get("/v1/polls/{pollID}/results", app.showResultsHandler)
+	mux.Post("/v1/polls/{pollID}/options/{optionID}", app.voteOptionHandler)
 
 	mux.Group(func(mux chi.Router) {
 		mux.Use(app.requireToken)
