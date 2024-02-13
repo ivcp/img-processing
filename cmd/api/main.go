@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/ivcp/polls/internal/data"
@@ -32,6 +33,7 @@ type application struct {
 	config config
 	logger *log.Logger
 	models data.Models
+	mutex  sync.Mutex
 }
 
 func main() {
