@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ivcp/polls/internal/data"
@@ -21,21 +20,18 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 		lastSeen time.Time
 	}
 
-	var (
-		mu      sync.Mutex
-		clients = make(map[string]*client)
-	)
+	clients := make(map[string]*client)
 
 	go func() {
 		for {
 			time.Sleep(time.Minute)
-			mu.Lock()
+			app.mutex.Lock()
 			for ip, client := range clients {
 				if time.Since(client.lastSeen) > 3*time.Minute {
 					delete(clients, ip)
 				}
 			}
-			mu.Unlock()
+			app.mutex.Unlock()
 		}
 	}()
 
@@ -48,7 +44,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 				return
 			}
 
-			mu.Lock()
+			app.mutex.Lock()
 
 			if _, ok := clients[ip]; !ok {
 				clients[ip] = &client{
@@ -62,12 +58,12 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 			clients[ip].lastSeen = time.Now()
 
 			if !clients[ip].limiter.Allow() {
-				mu.Unlock()
+				app.mutex.Unlock()
 				app.rateLimitExcededResponse(w, r)
 				return
 			}
 
-			mu.Unlock()
+			app.mutex.Unlock()
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -120,11 +116,9 @@ func (app *application) requireToken(next http.Handler) http.Handler {
 }
 
 func (app *application) checkPollExpired(next http.Handler) http.Handler {
-	var m sync.Mutex
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m.Lock()
-		defer m.Unlock()
+		app.mutex.Lock()
+		defer app.mutex.Unlock()
 
 		id := r.Context().Value("pollID").(int)
 		poll, err := app.models.Polls.Get(id)
