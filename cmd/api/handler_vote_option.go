@@ -16,6 +16,12 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	optionID, err := app.readIDParam(r, "optionID")
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
 	poll, err := app.models.Polls.Get(pollID)
 	if err != nil {
 		switch {
@@ -24,12 +30,6 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
-		return
-	}
-
-	optionID, err := app.readIDParam(r, "optionID")
-	if err != nil {
-		app.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -44,17 +44,20 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	voted, err := app.checkIP(r, pollID, ip)
+	app.mutex.Lock()
+	voted, err := app.checkIP(r, poll.ID, ip)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
+		app.mutex.Unlock()
 		return
 	}
 	if voted {
 		app.cannotVoteResponse(w, r)
+		app.mutex.Unlock()
 		return
 	}
 
-	err = app.models.PollOptions.Vote(optionID, ip)
+	err = app.models.PollOptions.Vote(optionID, poll.ID, ip)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -62,8 +65,11 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
+		app.mutex.Unlock()
 		return
 	}
+
+	app.mutex.Unlock()
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "vote successful"}, nil)
 	if err != nil {
