@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package data
 
@@ -457,7 +457,7 @@ func TestPollGetAll(t *testing.T) {
 	var poll Poll
 	for i := 1; i <= 10; i++ {
 		if i == 10 {
-			// sleep to delay inserting the record
+			// sleep to delay inserting the last record
 			time.Sleep(time.Second)
 		}
 		poll.Question = fmt.Sprintf("%c question", 96+i)
@@ -470,6 +470,20 @@ func TestPollGetAll(t *testing.T) {
 		if err := testModels.Polls.Insert(&poll, token.Hash); err != nil {
 			t.Fatalf("get all polls - insert poll returned an error: %s", err)
 		}
+	}
+
+	// insert one private poll
+	pollPrivate := Poll{
+		Question: "private test",
+		Options: []*PollOption{
+			{Value: "One", Position: 0},
+			{Value: "Two", Position: 1},
+		},
+		IsPrivate: true,
+	}
+	token, _ := GenerateToken()
+	if err := testModels.Polls.Insert(&pollPrivate, token.Hash); err != nil {
+		t.Fatalf("get all polls - insert poll returned an error: %s", err)
 	}
 
 	tests := []struct {
@@ -565,6 +579,16 @@ func TestPollGetAll(t *testing.T) {
 			expectedTotal:    0,
 			expectedLastPage: 0,
 		},
+		{
+			name:             "private poll not listed",
+			search:           "private test",
+			page:             1,
+			pageSize:         20,
+			sort:             "-created_at",
+			expectedRecords:  0,
+			expectedTotal:    0,
+			expectedLastPage: 0,
+		},
 	}
 
 	for _, test := range tests {
@@ -654,4 +678,14 @@ func TestPollGetAll(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("private poll available with Get", func(t *testing.T) {
+		poll, err := testModels.Polls.Get(15)
+		if err != nil {
+			t.Errorf("get private poll returned an error: %s", err)
+		}
+		if poll.Question != "private test" {
+			t.Errorf("expected to get question 'private poll', but got %s", poll.Question)
+		}
+	})
 }

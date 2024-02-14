@@ -24,6 +24,7 @@ type Poll struct {
 	ExpiresAt         ExpiresAt     `json:"expires_at"`
 	Token             string        `json:"token,omitempty"`
 	ResultsVisibility string        `json:"-"`
+	IsPrivate         bool          `json:"is_private"`
 }
 
 type PollModel struct {
@@ -32,12 +33,18 @@ type PollModel struct {
 
 func (p PollModel) Insert(poll *Poll, tokenHash []byte) error {
 	query := `
-		INSERT INTO polls (question, description, expires_at, results_visibility)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO polls (question, description, expires_at, results_visibility, is_private)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at, updated_at;				
 		`
 
-	args := []any{poll.Question, poll.Description, poll.ExpiresAt.Time, poll.ResultsVisibility}
+	args := []any{
+		poll.Question,
+		poll.Description,
+		poll.ExpiresAt.Time,
+		poll.ResultsVisibility,
+		poll.IsPrivate,
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -124,8 +131,8 @@ func (p PollModel) Get(id int) (*Poll, error) {
 
 	query := `
 		SELECT p.id, p. question, p.description, p.created_at, 
-		p.updated_at, p.expires_at, p.results_visibility, po.id, 
-		po.value, po.position
+		p.updated_at, p.expires_at, p.results_visibility, p.is_private,
+		po.id, po.value, po.position
 		FROM polls p
 		JOIN poll_options po ON po.poll_id = p.id 
 		WHERE p.id = $1;
@@ -158,12 +165,14 @@ func (p PollModel) Get(id int) (*Poll, error) {
 				&poll.UpdatedAt,
 				&poll.ExpiresAt.Time,
 				&poll.ResultsVisibility,
+				&poll.IsPrivate,
 				&option.ID,
 				&option.Value,
 				&option.Position,
 			)
 		default:
 			err = rows.Scan(
+				nil,
 				nil,
 				nil,
 				nil,
@@ -255,6 +264,7 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, er
 		FROM polls p
 		JOIN poll_options po ON po.poll_id = p.id 
 		WHERE (to_tsvector('simple', question) @@ plainto_tsquery('simple', $1) OR $1 = '') 
+		AND p.is_private = false
 		GROUP BY p.id
 		ORDER BY %s %s, id ASC
 		LIMIT $2 OFFSET $3;
