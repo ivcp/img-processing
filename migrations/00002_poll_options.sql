@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS poll_options (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     poll_id uuid REFERENCES polls (id) ON DELETE CASCADE,
     value text NOT NULL,
     position int NOT NULL,  

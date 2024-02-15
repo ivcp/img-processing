@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS polls (
-    id uuid PRIMARY KEY,
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     question text NOT NULL,
     description text NOT NULL,
     created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
