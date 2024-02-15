@@ -6,6 +6,8 @@ import (
 	"github.com/ivcp/polls/internal/validator"
 )
 
+var resultsVisibilitySafelist = []string{"always", "after_vote", "after_deadline"}
+
 func ValidatePoll(v *validator.Validator, poll *Poll) {
 	v.Check(poll.Question != "", "question", "must not be empty")
 	v.Check(len(poll.Question) <= 500, "question", "must not be more than 500 bytes long")
@@ -29,6 +31,13 @@ func ValidatePoll(v *validator.Validator, poll *Poll) {
 		v.Check(p <= len(poll.Options)-1, "options", "position must not excede the number of options")
 	}
 	if !poll.ExpiresAt.IsZero() {
-		v.Check(poll.ExpiresAt.After(time.Now().Add(time.Minute)), "expires_at", "must be more than a minute in the future")
+		v.Check(poll.ExpiresAt.After(
+			time.Now().Add(time.Minute)),
+			"expires_at",
+			"must be more than a minute in the future",
+		)
 	}
+	v.Check(validator.PermittedValue(
+		poll.ResultsVisibility, resultsVisibilitySafelist...,
+	), "results_visibility", "invalid results_visibility value")
 }

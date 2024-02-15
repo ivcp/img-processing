@@ -22,9 +22,9 @@ type Poll struct {
 	CreatedAt         time.Time     `json:"created_at"`
 	UpdatedAt         time.Time     `json:"updated_at"`
 	ExpiresAt         ExpiresAt     `json:"expires_at"`
-	Token             string        `json:"token,omitempty"`
-	ResultsVisibility string        `json:"-"`
+	ResultsVisibility string        `json:"results_visibility"`
 	IsPrivate         bool          `json:"is_private"`
+	Token             string        `json:"token,omitempty"`
 }
 
 type PollModel struct {
@@ -257,7 +257,7 @@ func (p PollModel) Delete(id int) error {
 func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), p.id, p.question, p.description, 
-		p.created_at, p.updated_at, p.expires_at,
+		p.created_at, p.updated_at, p.expires_at, p.results_visibility,
 	    jsonb_agg(jsonb_build_object(
 			'id', po.id, 'value', po.value, 'position', po.position
 			)) AS options
@@ -293,6 +293,7 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, er
 			&poll.CreatedAt,
 			&poll.UpdatedAt,
 			&poll.ExpiresAt.Time,
+			&poll.ResultsVisibility,
 			&optionsJson,
 		)
 		if err != nil {
@@ -385,11 +386,12 @@ func (p MockPollModel) Insert(poll *Poll, tokenHash []byte) error {
 func (p MockPollModel) Get(id int) (*Poll, error) {
 	if id == 1 {
 		poll := Poll{
-			ID:        1,
-			Question:  "Test?",
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			ExpiresAt: ExpiresAt{time.Now().Add(2 * time.Minute)},
+			ID:                1,
+			Question:          "Test?",
+			CreatedAt:         time.Now(),
+			UpdatedAt:         time.Now(),
+			ExpiresAt:         ExpiresAt{time.Now().Add(2 * time.Minute)},
+			ResultsVisibility: "always",
 			Options: []*PollOption{
 				{ID: 1, Value: "One", Position: 0},
 				{ID: 2, Value: "Two", Position: 1},

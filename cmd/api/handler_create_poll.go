@@ -28,24 +28,16 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if input.ResultsVisibility == "" {
-		input.ResultsVisibility = "always"
-	}
-
-	showResults := data.ResultsVisibility{
-		Value:         input.ResultsVisibility,
-		ValueSafelist: []string{"always", "after_vote", "after_deadline"},
-	}
-
-	v := validator.New()
-	if data.ValidateResultsVisibility(v, showResults); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
 	options := []*data.PollOption{}
 	for _, option := range input.Options {
-		options = append(options, &data.PollOption{Value: strings.TrimSpace(option.Value), Position: option.Position})
+		options = append(
+			options,
+			&data.PollOption{Value: strings.TrimSpace(option.Value), Position: option.Position},
+		)
+	}
+
+	if input.ResultsVisibility == "" {
+		input.ResultsVisibility = "always"
 	}
 
 	poll := &data.Poll{
@@ -53,10 +45,11 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		Description:       strings.TrimSpace(input.Description),
 		Options:           options,
 		ExpiresAt:         input.ExpiresAt,
-		ResultsVisibility: showResults.Value,
+		ResultsVisibility: input.ResultsVisibility,
 		IsPrivate:         input.IsPrivate,
 	}
 
+	v := validator.New()
 	if data.ValidatePoll(v, poll); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
