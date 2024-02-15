@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS tokens (
     hash bytea PRIMARY KEY,
-    poll_id bigserial REFERENCES polls (id) ON DELETE CASCADE    
+    poll_id uuid REFERENCES polls (id) ON DELETE CASCADE    
 );
 -- +goose StatementEnd
 

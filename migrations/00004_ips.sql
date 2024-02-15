@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS ips (   
     id bigserial PRIMARY KEY,
     ip inet NOT NULL,
-    poll_id bigserial REFERENCES polls (id) ON DELETE CASCADE
+    poll_id uuid REFERENCES polls (id) ON DELETE CASCADE
 );
 -- +goose StatementEnd
 
