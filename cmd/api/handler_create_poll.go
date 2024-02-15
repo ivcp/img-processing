@@ -19,6 +19,7 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		} `json:"options"`
 		ExpiresAt         data.ExpiresAt `json:"expires_at"`
 		ResultsVisibility string         `json:"results_visibility"`
+		IsPrivate         bool           `json:"is_private"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -53,6 +54,7 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 		Options:           options,
 		ExpiresAt:         input.ExpiresAt,
 		ResultsVisibility: showResults.Value,
+		IsPrivate:         input.IsPrivate,
 	}
 
 	if data.ValidatePoll(v, poll); !v.Valid() {
