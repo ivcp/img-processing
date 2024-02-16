@@ -19,20 +19,20 @@ type Models struct {
 
 type Polls interface {
 	Insert(poll *Poll, tokenHash []byte) error
-	Get(id int) (*Poll, error)
+	Get(id string) (*Poll, error)
 	Update(poll *Poll) error
-	Delete(id int) error
+	Delete(id string) error
 	GetAll(search string, filters Filters) ([]*Poll, Metadata, error)
-	GetVotedIPs(pollID int) ([]*net.IP, error)
-	CheckToken(tokenPlaintext string) (int, error)
+	GetVotedIPs(pollID string) ([]*net.IP, error)
+	CheckToken(tokenPlaintext string) (string, error)
 }
 type PollOptions interface {
-	Insert(option *PollOption, pollID int) error
+	Insert(option *PollOption, pollID string) error
 	UpdateValue(option *PollOption) error
 	UpdatePosition(options []*PollOption) error
-	Vote(optionID int, pollID int, ip string) error
-	Delete(optionID int) error
-	GetResults(pollID int) ([]*PollOption, error)
+	Vote(optionID string, pollID string, ip string) error
+	Delete(optionID string) error
+	GetResults(pollID string) ([]*PollOption, error)
 }
 
 func NewModels(db *pgxpool.Pool) Models {

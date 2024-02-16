@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/ory/dockertest/v3"
@@ -29,7 +30,6 @@ var (
 )
 
 var (
-	resource   *dockertest.Resource
 	pool       *dockertest.Pool
 	testDB     *pgxpool.Pool
 	testModels Models
@@ -110,7 +110,8 @@ func Test_pingDB(t *testing.T) {
 	}
 }
 
-func TestPollsInsert(t *testing.T) {
+func createPollAndGenerateToken(t *testing.T) (*Poll, *Token) {
+	t.Helper()
 	poll := Poll{
 		Question: "Test?",
 		Options: []*PollOption{
@@ -125,12 +126,18 @@ func TestPollsInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := testModels.Polls.Insert(&poll, token.Hash); err != nil {
+	return &poll, token
+}
+
+func TestPollsInsert(t *testing.T) {
+	poll, token := createPollAndGenerateToken(t)
+
+	if err := testModels.Polls.Insert(poll, token.Hash); err != nil {
 		t.Errorf("insert poll returned an error: %s", err)
 	}
 
-	if poll.ID != 1 {
-		t.Errorf("expected id to be 1 but got %d", poll.ID)
+	if poll.ID == "" {
+		t.Errorf("expected id not to be zero value but got %s", poll.ID)
 	}
 
 	if poll.CreatedAt.IsZero() || poll.UpdatedAt.IsZero() {
@@ -138,12 +145,12 @@ func TestPollsInsert(t *testing.T) {
 	}
 
 	for _, opt := range poll.Options {
-		if opt.ID == 0 {
-			t.Errorf("expected option id not to be zero: %s %d", opt.Value, opt.ID)
+		if opt.ID == "" {
+			t.Errorf("expected option id not to be zero: %s %s", opt.Value, opt.ID)
 		}
 	}
 
-	_, err = testModels.Polls.CheckToken(token.Plaintext)
+	_, err := testModels.Polls.CheckToken(token.Plaintext)
 	if err != nil {
 		if errors.Is(err, ErrRecordNotFound) {
 			t.Errorf("token hash not inserted")
@@ -151,67 +158,114 @@ func TestPollsInsert(t *testing.T) {
 			t.Errorf("check token returned an error: %s", err)
 		}
 	}
+
+	if err = testModels.Polls.Delete(poll.ID); err != nil {
+		t.Errorf("delete poll returned an error: %s", err)
+	}
 }
 
 func TestPollsGet(t *testing.T) {
-	poll, err := testModels.Polls.Get(1)
+	poll, token := createPollAndGenerateToken(t)
+	if err := testModels.Polls.Insert(poll, token.Hash); err != nil {
+		t.Errorf("insert poll returned an error: %s", err)
+	}
+
+	p, err := testModels.Polls.Get(poll.ID)
 	if err != nil {
 		t.Errorf("get poll returned an error: %s", err)
 	}
 
-	if poll.Question != "Test?" {
+	if p.Question != "Test?" {
 		t.Errorf("get poll returned wrong question: expected 'Test?' but got %s", poll.Question)
 	}
 
-	_, err = testModels.Polls.Get(9)
+	_, err = testModels.Polls.Get("badID")
+	if err == nil {
+		t.Errorf("expected error on bad id")
+	}
+
+	_, err = testModels.Polls.Get("")
+	if err == nil {
+		t.Errorf("expected error on empty string id")
+	}
+
+	_, err = testModels.Polls.Get(uuid.New().String())
 	if !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent poll")
 	}
 
-	_, err = testModels.Polls.Get(0)
-	if !errors.Is(err, ErrRecordNotFound) {
-		t.Errorf("expected error on bad poll id")
+	if err = testModels.Polls.Delete(poll.ID); err != nil {
+		t.Errorf("delete poll returned an error: %s", err)
 	}
 }
 
 func TestPollsUpdate(t *testing.T) {
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+
+	p, _ := testModels.Polls.Get(poll.ID)
+
+	oldUpdatedAt := poll.UpdatedAt
+
 	newQuestion := "Is this a test?"
 	newDescription := "Test description."
 	newExpires := ExpiresAt{time.Now().Add(10 * time.Minute)}
 
-	poll, _ := testModels.Polls.Get(1)
+	p.Question = newQuestion
+	p.Description = newDescription
+	p.ExpiresAt = newExpires
 
-	oldUpdatedAt := poll.UpdatedAt
-
-	poll.Question = newQuestion
-	poll.Description = newDescription
-	poll.ExpiresAt = newExpires
-
+	// sleep so updated_at can be changed
 	time.Sleep(1 * time.Second)
-	if err := testModels.Polls.Update(poll); err != nil {
+	if err := testModels.Polls.Update(p); err != nil {
 		t.Errorf("update poll returned an error: %s", err)
 	}
 
-	poll, _ = testModels.Polls.Get(1)
+	updatedPoll, _ := testModels.Polls.Get(p.ID)
 
-	if poll.Question != newQuestion {
-		t.Errorf("expected question to be %s, but got %s", newQuestion, poll.Question)
+	if updatedPoll.Question != newQuestion {
+		t.Errorf("expected question to be %s, but got %s", newQuestion, updatedPoll.Question)
 	}
-	if poll.Description != newDescription {
-		t.Errorf("expected description to be %s, but got %s", newDescription, poll.Description)
+	if updatedPoll.Description != newDescription {
+		t.Errorf("expected description to be %s, but got %s", newDescription, updatedPoll.Description)
 	}
-	if poll.ExpiresAt.IsZero() {
+	if updatedPoll.ExpiresAt.IsZero() {
 		t.Errorf("expected expires at not to be zero value")
 	}
 
-	if poll.UpdatedAt.Equal(oldUpdatedAt) {
+	if updatedPoll.UpdatedAt.Equal(oldUpdatedAt) {
 		t.Errorf("expected updated at to be changed")
+	}
+	_ = testModels.Polls.Delete(updatedPoll.ID)
+}
+
+func TestPollsDelete(t *testing.T) {
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
+
+	if err := testModels.Polls.Delete(uuid.New().String()); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on non-existent poll")
+	}
+	if err := testModels.Polls.Delete(""); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on bad poll id")
+	}
+
+	if err := testModels.Polls.Delete(p.ID); err != nil {
+		t.Errorf("delete poll returned an error: %s", err)
+	}
+	_, err := testModels.Polls.Get(p.ID)
+	if !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on getting deleted poll")
 	}
 }
 
 func TestPollOptionsInsert(t *testing.T) {
-	poll, _ := testModels.Polls.Get(1)
-	oldUpdatedAt := poll.UpdatedAt
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
+
+	oldUpdatedAt := p.UpdatedAt
 
 	newValue := "Four"
 
@@ -221,18 +275,18 @@ func TestPollOptionsInsert(t *testing.T) {
 	}
 
 	time.Sleep(1 * time.Second)
-	if err := testModels.PollOptions.Insert(&option, 1); err != nil {
+	if err := testModels.PollOptions.Insert(&option, p.ID); err != nil {
 		t.Errorf("add option returned an error: %s", err)
 	}
 
-	poll, _ = testModels.Polls.Get(1)
+	updatedPoll, _ := testModels.Polls.Get(p.ID)
 
-	if len(poll.Options) != 4 {
-		t.Errorf("expected 4 options in poll, but got %d", len(poll.Options))
+	if len(updatedPoll.Options) != 4 {
+		t.Errorf("expected 4 options in poll, but got %d", len(updatedPoll.Options))
 	}
 
 	match := false
-	for _, opt := range poll.Options {
+	for _, opt := range updatedPoll.Options {
 		if opt.Value == newValue {
 			match = true
 		}
@@ -241,16 +295,21 @@ func TestPollOptionsInsert(t *testing.T) {
 		t.Errorf("expected option to contain value %q, but it doesn't", newValue)
 	}
 
-	if poll.UpdatedAt.Equal(oldUpdatedAt) {
+	if updatedPoll.UpdatedAt.Equal(oldUpdatedAt) {
 		t.Errorf("expected poll updated at to be changed")
 	}
+	_ = testModels.Polls.Delete(updatedPoll.ID)
 }
 
 func TestPollOptionsUpdateValue(t *testing.T) {
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
+
 	newValue := "Test change value"
 
 	option := PollOption{
-		ID:    1,
+		ID:    p.Options[0].ID,
 		Value: newValue,
 	}
 
@@ -258,11 +317,11 @@ func TestPollOptionsUpdateValue(t *testing.T) {
 		t.Errorf("update option value returned an error: %s", err)
 	}
 
-	poll, _ := testModels.Polls.Get(1)
+	updatedPoll, _ := testModels.Polls.Get(p.ID)
 
 	match := false
-	for _, opt := range poll.Options {
-		if opt.ID == 1 && opt.Value == newValue {
+	for _, opt := range updatedPoll.Options {
+		if opt.ID == p.Options[0].ID && opt.Value == newValue {
 			match = true
 		}
 	}
@@ -270,22 +329,37 @@ func TestPollOptionsUpdateValue(t *testing.T) {
 	if !match {
 		t.Errorf("option value not updated")
 	}
+
+	_ = testModels.Polls.Delete(updatedPoll.ID)
 }
 
 func TestPollOptionsUpdatePosition(t *testing.T) {
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
+
 	options := []*PollOption{
-		{ID: 4, Position: 2},
-		{ID: 3, Position: 3},
+		{ID: p.Options[2].ID, Position: 1},
+		{ID: p.Options[1].ID, Position: 2},
 	}
 
 	if err := testModels.PollOptions.UpdatePosition(options); err != nil {
 		t.Errorf("update option value returned an error: %s", err)
 	}
 
-	poll, _ := testModels.Polls.Get(1)
+	updatedPoll, _ := testModels.Polls.Get(p.ID)
 
-	for _, opt := range poll.Options {
-		if opt.Value == "Four" {
+	for _, opt := range updatedPoll.Options {
+		if opt.Value == "Three" {
+			if opt.Position != 1 {
+				t.Errorf(
+					"option %s did not change position: want 1 but got %d",
+					opt.Value,
+					opt.Position,
+				)
+			}
+		}
+		if opt.Value == "Two" {
 			if opt.Position != 2 {
 				t.Errorf(
 					"option %s did not change position: want 2 but got %d",
@@ -294,135 +368,99 @@ func TestPollOptionsUpdatePosition(t *testing.T) {
 				)
 			}
 		}
-		if opt.Value == "Three" {
-			if opt.Position != 3 {
-				t.Errorf(
-					"option %s did not change position: want 2 but got %d",
-					opt.Value,
-					opt.Position,
-				)
-			}
-		}
 	}
+	_ = testModels.Polls.Delete(updatedPoll.ID)
+}
+
+func TestPollOptionsDelete(t *testing.T) {
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
+
+	if err := testModels.PollOptions.Delete(p.Options[2].ID); err != nil {
+		t.Errorf("delete option value returned an error: %s", err)
+	}
+
+	updatedPoll, _ := testModels.Polls.Get(p.ID)
+
+	if len(updatedPoll.Options) != 2 {
+		t.Errorf("expected len of options to be 2 but got %d", len(poll.Options))
+	}
+
+	if err := testModels.PollOptions.Delete(uuid.New().String()); !errors.Is(err, ErrRecordNotFound) {
+		t.Errorf("expected error on non-existent option")
+	}
+
+	_ = testModels.Polls.Delete(updatedPoll.ID)
 }
 
 func TestPollOptionsVote(t *testing.T) {
-	err := testModels.PollOptions.Vote(1, 1, "0.0.0.0")
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
+
+	err := testModels.PollOptions.Vote(p.Options[0].ID, p.ID, "0.0.0.0")
 	if err != nil {
 		t.Errorf("vote option returned an error: %s", err)
 	}
 
-	options, _ := testModels.PollOptions.GetResults(1)
+	options, err := testModels.PollOptions.GetResults(p.ID)
+	if err != nil {
+		t.Errorf("getting votes returned an error: %s", err)
+	}
+
 	for _, opt := range options {
-		if opt.ID == 1 && opt.VoteCount != 1 {
-			t.Errorf("expected vote count to increase by one, but it didn't: vote_count %d", opt.VoteCount)
+		if opt.ID == p.Options[0].ID && opt.VoteCount != 1 {
+			t.Errorf(
+				"expected vote count to increase by one, but it didn't: vote_count %d",
+				opt.VoteCount,
+			)
 		}
 	}
 
-	_ = testModels.PollOptions.Vote(1, 1, "0.0.0.0")
-	_ = testModels.PollOptions.Vote(1, 1, "0.0.0.0")
+	_ = testModels.PollOptions.Vote(p.Options[0].ID, p.ID, "0.0.0.0")
+	_ = testModels.PollOptions.Vote(p.Options[0].ID, p.ID, "0.0.0.0")
 
-	options, _ = testModels.PollOptions.GetResults(1)
+	options, _ = testModels.PollOptions.GetResults(p.ID)
 	for _, opt := range options {
-		if opt.ID == 1 && opt.VoteCount != 3 {
+		if opt.ID == p.Options[0].ID && opt.VoteCount != 3 {
 			t.Errorf("expected vote count to be 3, but got %d", opt.VoteCount)
 		}
 	}
 
-	if err := testModels.PollOptions.Vote(99, 1, "0.0.0.0"); !errors.Is(err, ErrRecordNotFound) {
+	if err := testModels.PollOptions.Vote(
+		uuid.New().String(),
+		p.ID,
+		"0.0.0.0",
+	); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on non-existent option")
 	}
 
-	poll := Poll{
-		Question: "votes",
-		Options: []*PollOption{
-			{Value: "One", Position: 0},
-			{Value: "Two", Position: 1},
-		},
-	}
+	poll2, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll2, token.Hash)
+	p2, _ := testModels.Polls.Get(poll2.ID)
 
-	token, _ := GenerateToken()
-	_ = testModels.Polls.Insert(&poll, token.Hash)
-
-	if err = testModels.PollOptions.Vote(1, 2, "0.0.0.0"); !errors.Is(err, ErrRecordNotFound) {
+	if err = testModels.PollOptions.Vote(
+		p.Options[0].ID,
+		p2.ID,
+		"0.0.0.0",
+	); !errors.Is(err, ErrRecordNotFound) {
 		t.Errorf("expected error on post and option id mismatch")
 	}
-	_ = testModels.Polls.Delete(2)
-}
-
-func TestGetResults(t *testing.T) {
-	options, err := testModels.PollOptions.GetResults(1)
-	if err != nil {
-		t.Errorf("getting votes returned an error: %s", err)
-	}
-	for _, opt := range options {
-		if opt.ID == 1 && opt.VoteCount != 3 {
-			t.Errorf("expected vote count to be 3, but got %d", opt.VoteCount)
-		}
-		if opt.ID != 1 && opt.VoteCount != 0 {
-			t.Errorf("expected vote count to be 0, but got %d", opt.VoteCount)
-		}
-	}
-	options, err = testModels.PollOptions.GetResults(99)
-	if err != nil {
-		t.Errorf("getting votes returned an error: %s", err)
-	}
-	if len(options) != 0 {
-		t.Errorf("expected len of options to be 0, but got %d", len(options))
-	}
-}
-
-func TestPollOptionsDelete(t *testing.T) {
-	if err := testModels.PollOptions.Delete(3); err != nil {
-		t.Errorf("delete option value returned an error: %s", err)
-	}
-
-	poll, _ := testModels.Polls.Get(1)
-
-	if len(poll.Options) != 3 {
-		t.Errorf("expected len of options to be 3 but got %d", len(poll.Options))
-	}
-
-	if err := testModels.PollOptions.Delete(99); !errors.Is(err, ErrRecordNotFound) {
-		t.Errorf("expected error on non-existent option")
-	}
-}
-
-func TestPollsDelete(t *testing.T) {
-	if err := testModels.Polls.Delete(99); !errors.Is(err, ErrRecordNotFound) {
-		t.Errorf("expected error on non-existent poll")
-	}
-	if err := testModels.Polls.Delete(0); !errors.Is(err, ErrRecordNotFound) {
-		t.Errorf("expected error on bad poll id")
-	}
-
-	if err := testModels.Polls.Delete(1); err != nil {
-		t.Errorf("delete poll returned an error: %s", err)
-	}
-	_, err := testModels.Polls.Get(1)
-	if !errors.Is(err, ErrRecordNotFound) {
-		t.Errorf("expected error on getting deleted poll")
-	}
+	_ = testModels.Polls.Delete(p.ID)
+	_ = testModels.Polls.Delete(p2.ID)
 }
 
 func TestPollGetVotedIPs(t *testing.T) {
-	poll := Poll{
-		Question: "ips",
-		Options: []*PollOption{
-			{Value: "One", Position: 0},
-			{Value: "Two", Position: 1},
-		},
-	}
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
 
-	token, _ := GenerateToken()
-	_ = testModels.Polls.Insert(&poll, token.Hash)
+	_ = testModels.PollOptions.Vote(p.Options[0].ID, p.ID, "0.0.0.1")
+	_ = testModels.PollOptions.Vote(p.Options[0].ID, p.ID, "0.0.0.2")
+	_ = testModels.PollOptions.Vote(p.Options[1].ID, p.ID, "0.0.0.3")
 
-	// poll will have id 3, and options 7 and 8
-	_ = testModels.PollOptions.Vote(7, 3, "0.0.0.1")
-	_ = testModels.PollOptions.Vote(7, 3, "0.0.0.2")
-	_ = testModels.PollOptions.Vote(8, 3, "0.0.0.3")
-
-	ips, err := testModels.Polls.GetVotedIPs(3)
+	ips, err := testModels.Polls.GetVotedIPs(p.ID)
 	if err != nil {
 		t.Errorf("get ips returned an error: %s", err)
 	}
@@ -431,7 +469,7 @@ func TestPollGetVotedIPs(t *testing.T) {
 		t.Errorf("expected 3 ips to be stored, but got %d", len(ips))
 	}
 
-	ips, err = testModels.Polls.GetVotedIPs(99)
+	ips, err = testModels.Polls.GetVotedIPs(uuid.New().String())
 	if err != nil {
 		t.Errorf("get ips returned an error: %s", err)
 	}
@@ -439,9 +477,11 @@ func TestPollGetVotedIPs(t *testing.T) {
 		t.Errorf("expected empty slice on non existent poll, but got %s", ips)
 	}
 
-	token, _ = GenerateToken()
-	_ = testModels.Polls.Insert(&poll, token.Hash)
-	ips, err = testModels.Polls.GetVotedIPs(4)
+	poll, token = createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p2, _ := testModels.Polls.Get(poll.ID)
+
+	ips, err = testModels.Polls.GetVotedIPs(p2.ID)
 	if err != nil {
 		t.Errorf("get ips returned an error: %s", err)
 	}
@@ -449,17 +489,51 @@ func TestPollGetVotedIPs(t *testing.T) {
 		t.Errorf("expected empty slice if poll without votes, but got %s", ips)
 	}
 
-	_ = testModels.Polls.Delete(3)
-	_ = testModels.Polls.Delete(4)
+	_ = testModels.Polls.Delete(p.ID)
+	_ = testModels.Polls.Delete(p2.ID)
+}
+
+func TestGetResults(t *testing.T) {
+	poll, token := createPollAndGenerateToken(t)
+	_ = testModels.Polls.Insert(poll, token.Hash)
+	p, _ := testModels.Polls.Get(poll.ID)
+	_ = testModels.PollOptions.Vote(p.Options[0].ID, p.ID, "0.0.0.0")
+	_ = testModels.PollOptions.Vote(p.Options[1].ID, p.ID, "0.0.0.0")
+	_ = testModels.PollOptions.Vote(p.Options[1].ID, p.ID, "0.0.0.0")
+
+	options, err := testModels.PollOptions.GetResults(p.ID)
+	if err != nil {
+		t.Errorf("getting votes returned an error: %s", err)
+	}
+
+	for _, opt := range options {
+		if opt.ID == p.Options[0].ID && opt.VoteCount != 1 {
+			t.Errorf("expected vote count to be 1, but got %d", opt.VoteCount)
+		}
+		if opt.ID == p.Options[1].ID && opt.VoteCount != 2 {
+			t.Errorf("expected vote count to be 2, but got %d", opt.VoteCount)
+		}
+	}
+
+	options, err = testModels.PollOptions.GetResults(uuid.New().String())
+	if err != nil {
+		t.Errorf("getting votes returned an error: %s", err)
+	}
+	if len(options) != 0 {
+		t.Errorf("expected len of options to be 0, but got %d", len(options))
+	}
+
+	_ = testModels.Polls.Delete(p.ID)
 }
 
 func TestPollGetAll(t *testing.T) {
 	var poll Poll
 	for i := 1; i <= 10; i++ {
-		if i == 10 {
-			// sleep to delay inserting the last record
-			time.Sleep(time.Second)
-		}
+
+		// sleep to delay inserting the record,
+		// to ensure created_at is different for all
+		time.Sleep(1 * time.Second)
+
 		poll.Question = fmt.Sprintf("%c question", 96+i)
 		poll.Options = []*PollOption{
 			{Value: fmt.Sprintf("Option one, poll %c", 96+i), Position: 0},
@@ -633,15 +707,16 @@ func TestPollGetAll(t *testing.T) {
 						if polls[0].Options[0].Value != "Option one, poll j" {
 							t.Errorf("options: expected option to be in first poll but got, %q", polls[0].Options[0].Value)
 						}
+
 					}
 				case "created_at":
 					if metadata.CurrentPage == 1 {
 						if polls[9].Question != "j question" {
-							t.Errorf("sorting: expected last poll to be the last one iserted but got, %q", polls[0].Question)
+							t.Errorf("sorting: expected last poll to be the last one iserted but got, %q", polls[9].Question)
 						}
 
-						if polls[9].Options[0].Value != "Option one, poll j" {
-							t.Errorf("options: expected option to be in first poll but got, %q", polls[9].Options[0].Value)
+						if polls[0].Options[0].Value != "Option one, poll a" {
+							t.Errorf("options: expected option to be in first poll but got, %q", polls[0].Options[0].Value)
 						}
 					}
 				case "question":
@@ -680,7 +755,7 @@ func TestPollGetAll(t *testing.T) {
 	}
 
 	t.Run("private poll available with Get", func(t *testing.T) {
-		poll, err := testModels.Polls.Get(15)
+		poll, err := testModels.Polls.Get(pollPrivate.ID)
 		if err != nil {
 			t.Errorf("get private poll returned an error: %s", err)
 		}

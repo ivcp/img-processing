@@ -15,7 +15,7 @@ import (
 )
 
 type Poll struct {
-	ID                int           `json:"id"`
+	ID                string        `json:"id"`
 	Question          string        `json:"question"`
 	Description       string        `json:"description"`
 	Options           []*PollOption `json:"options"`
@@ -124,8 +124,8 @@ func (p PollModel) Insert(poll *Poll, tokenHash []byte) error {
 	return err
 }
 
-func (p PollModel) Get(id int) (*Poll, error) {
-	if id < 1 {
+func (p PollModel) Get(id string) (*Poll, error) {
+	if id == "" {
 		return nil, ErrRecordNotFound
 	}
 
@@ -142,10 +142,10 @@ func (p PollModel) Get(id int) (*Poll, error) {
 	defer cancel()
 
 	rows, err := p.DB.Query(ctx, query, id)
-	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("get poll: %w", err)
 	}
+	defer rows.Close()
 
 	var poll Poll
 	var options []*PollOption
@@ -229,8 +229,8 @@ func (p PollModel) Update(poll *Poll) error {
 	return p.DB.QueryRow(ctx, queryPoll, args...).Scan(&poll.UpdatedAt)
 }
 
-func (p PollModel) Delete(id int) error {
-	if id < 1 {
+func (p PollModel) Delete(id string) error {
+	if id == "" {
 		return ErrRecordNotFound
 	}
 
@@ -315,20 +315,19 @@ func (p PollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata, er
 	return polls, metadata, nil
 }
 
-func (p PollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
+func (p PollModel) GetVotedIPs(pollID string) ([]*net.IP, error) {
 	query := `
-	SELECT ip
-	FROM ips
-	WHERE poll_id = $1;
+		SELECT ip
+		FROM ips
+		WHERE poll_id = $1;
 	`
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	rows, err := p.DB.Query(ctx, query, pollID)
-	defer rows.Close()
-
 	if err != nil {
 		return nil, fmt.Errorf("get ips: %w", err)
 	}
+	defer rows.Close()
 
 	var ips []*net.IP
 
@@ -349,7 +348,7 @@ func (p PollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
 	return ips, nil
 }
 
-func (p PollModel) CheckToken(tokenPlaintext string) (int, error) {
+func (p PollModel) CheckToken(tokenPlaintext string) (string, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
@@ -361,13 +360,13 @@ func (p PollModel) CheckToken(tokenPlaintext string) (int, error) {
 	defer cancel()
 	row := p.DB.QueryRow(ctx, query, tokenHash[:])
 
-	var pollID int
+	var pollID string
 	err := row.Scan(&pollID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrRecordNotFound
+			return "", ErrRecordNotFound
 		}
-		return 0, fmt.Errorf("check token: %w", err)
+		return "", fmt.Errorf("check token: %w", err)
 	}
 
 	return pollID, nil
@@ -379,46 +378,46 @@ type MockPollModel struct {
 }
 
 func (p MockPollModel) Insert(poll *Poll, tokenHash []byte) error {
-	poll.ID = 1
+	poll.ID = "1"
 	return nil
 }
 
-func (p MockPollModel) Get(id int) (*Poll, error) {
-	if id == 1 {
+func (p MockPollModel) Get(id string) (*Poll, error) {
+	if id == "1" {
 		poll := Poll{
-			ID:                1,
+			ID:                "1",
 			Question:          "Test?",
 			CreatedAt:         time.Now(),
 			UpdatedAt:         time.Now(),
 			ExpiresAt:         ExpiresAt{time.Now().Add(2 * time.Minute)},
 			ResultsVisibility: "always",
 			Options: []*PollOption{
-				{ID: 1, Value: "One", Position: 0},
-				{ID: 2, Value: "Two", Position: 1},
-				{ID: 3, Value: "Three", Position: 2},
+				{ID: "1", Value: "One", Position: 0},
+				{ID: "2", Value: "Two", Position: 1},
+				{ID: "3", Value: "Three", Position: 2},
 			},
 		}
 		return &poll, nil
 	}
 	// expired poll
-	if id == 33 {
+	if id == "33" {
 		poll := Poll{
 			ExpiresAt: ExpiresAt{time.Now().Add(-1 * time.Minute)},
 		}
 		return &poll, nil
 	}
 	// expired not set
-	if id == 34 {
+	if id == "34" {
 		return &Poll{}, nil
 	}
 	// results after vote
-	if id == 35 {
+	if id == "35" {
 		return &Poll{
 			ResultsVisibility: "after_vote",
 		}, nil
 	}
 	// results after deadline
-	if id == 36 {
+	if id == "36" {
 		return &Poll{
 			ExpiresAt:         ExpiresAt{time.Now().Add(1 * time.Minute)},
 			ResultsVisibility: "after_deadline",
@@ -428,14 +427,14 @@ func (p MockPollModel) Get(id int) (*Poll, error) {
 }
 
 func (p MockPollModel) Update(poll *Poll) error {
-	if poll.ID == 1 {
+	if poll.ID == "1" {
 		return nil
 	}
 	return ErrRecordNotFound
 }
 
-func (p MockPollModel) Delete(id int) error {
-	if id == 1 {
+func (p MockPollModel) Delete(id string) error {
+	if id == "1" {
 		return nil
 	}
 	return ErrRecordNotFound
@@ -445,13 +444,13 @@ func (p MockPollModel) GetAll(search string, filters Filters) ([]*Poll, Metadata
 	return nil, Metadata{}, nil
 }
 
-func (p MockPollModel) GetVotedIPs(pollID int) ([]*net.IP, error) {
+func (p MockPollModel) GetVotedIPs(pollID string) ([]*net.IP, error) {
 	var ips []*net.IP
 	i := net.IPv4(0, 0, 0, 1)
 	ips = append(ips, &i)
 	return ips, nil
 }
 
-func (p MockPollModel) CheckToken(tokenPlaintext string) (int, error) {
-	return 1, nil
+func (p MockPollModel) CheckToken(tokenPlaintext string) (string, error) {
+	return "1", nil
 }

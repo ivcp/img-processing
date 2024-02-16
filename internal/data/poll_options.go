@@ -11,7 +11,7 @@ import (
 )
 
 type PollOption struct {
-	ID    int    `json:"id"`
+	ID    string `json:"id"`
 	Value string `json:"value"`
 	// Position of option in the list, starting at 0
 	Position  int `json:"position"`
@@ -22,7 +22,7 @@ type PollOptionModel struct {
 	DB *pgxpool.Pool
 }
 
-func (p PollOptionModel) Insert(option *PollOption, pollID int) error {
+func (p PollOptionModel) Insert(option *PollOption, pollID string) error {
 	query := `
 		INSERT INTO poll_options (poll_id, value, position, vote_count)
 		VALUES ($1, $2, $3, $4);		
@@ -47,7 +47,7 @@ func (p PollOptionModel) UpdateValue(option *PollOption) error {
 		RETURNING poll_id;	
 	`
 
-	var pollID int
+	var pollID string
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 	err := p.DB.QueryRow(
@@ -68,7 +68,7 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 		RETURNING poll_id;	
 	`
 
-	var pollID int
+	var pollID string
 
 	for _, option := range options {
 		ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
@@ -84,7 +84,11 @@ func (p PollOptionModel) UpdatePosition(options []*PollOption) error {
 	return p.setUpdatedAt(pollID)
 }
 
-func (p PollOptionModel) Delete(optionID int) error {
+func (p PollOptionModel) Delete(optionID string) error {
+	if optionID == "" {
+		return ErrRecordNotFound
+	}
+
 	query := `
 		DELETE FROM poll_options
 		WHERE id = $1
@@ -93,7 +97,7 @@ func (p PollOptionModel) Delete(optionID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	var pollID int
+	var pollID string
 	err := p.DB.QueryRow(ctx, query, optionID).Scan(&pollID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -105,7 +109,7 @@ func (p PollOptionModel) Delete(optionID int) error {
 	return p.setUpdatedAt(pollID)
 }
 
-func (p PollOptionModel) Vote(optionID int, pollID int, ip string) error {
+func (p PollOptionModel) Vote(optionID string, pollID string, ip string) error {
 	query := `
 		UPDATE poll_options 
 		SET vote_count = vote_count + 1
@@ -141,7 +145,7 @@ func (p PollOptionModel) Vote(optionID int, pollID int, ip string) error {
 	return nil
 }
 
-func (p PollOptionModel) GetResults(pollID int) ([]*PollOption, error) {
+func (p PollOptionModel) GetResults(pollID string) ([]*PollOption, error) {
 	query := `
 		SELECT id, value, position, vote_count
 		FROM poll_options
@@ -149,10 +153,11 @@ func (p PollOptionModel) GetResults(pollID int) ([]*PollOption, error) {
 	`
 
 	rows, err := p.DB.Query(context.Background(), query, pollID)
-	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("get votes for poll: %w", err)
 	}
+	defer rows.Close()
+
 	var options []*PollOption
 
 	for rows.Next() {
@@ -176,7 +181,7 @@ func (p PollOptionModel) GetResults(pollID int) ([]*PollOption, error) {
 	return options, nil
 }
 
-func (p PollOptionModel) setUpdatedAt(pollID int) error {
+func (p PollOptionModel) setUpdatedAt(pollID string) error {
 	query := `
 		UPDATE polls
 		SET updated_at = NOW()
@@ -197,7 +202,7 @@ type MockPollOptionModel struct {
 	DB *pgxpool.Pool
 }
 
-func (p MockPollOptionModel) Insert(option *PollOption, pollID int) error {
+func (p MockPollOptionModel) Insert(option *PollOption, pollID string) error {
 	return nil
 }
 
@@ -209,14 +214,14 @@ func (p MockPollOptionModel) UpdatePosition(options []*PollOption) error {
 	return nil
 }
 
-func (p MockPollOptionModel) Delete(optionID int) error {
+func (p MockPollOptionModel) Delete(optionID string) error {
 	return nil
 }
 
-func (p MockPollOptionModel) Vote(optionID int, pollID int, ip string) error {
+func (p MockPollOptionModel) Vote(optionID string, pollID string, ip string) error {
 	return nil
 }
 
-func (p MockPollOptionModel) GetResults(pollID int) ([]*PollOption, error) {
+func (p MockPollOptionModel) GetResults(pollID string) ([]*PollOption, error) {
 	return nil, nil
 }

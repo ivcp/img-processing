@@ -10,7 +10,10 @@ require (
 	golang.org/x/time v0.5.0
 )
 
-require github.com/jackc/pgio v1.0.0 // indirect
+require (
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+)
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
