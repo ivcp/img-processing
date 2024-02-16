@@ -4,16 +4,14 @@ go 1.21.3
 
 require (
 	github.com/go-chi/chi/v5 v5.0.11
+	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.5.1
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pressly/goose v2.7.0+incompatible
 	golang.org/x/time v0.5.0
 )
 
-require (
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/jackc/pgio v1.0.0 // indirect
-)
+require github.com/jackc/pgio v1.0.0 // indirect
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
