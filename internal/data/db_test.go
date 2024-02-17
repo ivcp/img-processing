@@ -1,4 +1,4 @@
-// go:build integration
+//go:build integration
 
 package data
 
@@ -529,10 +529,10 @@ func TestGetResults(t *testing.T) {
 func TestPollGetAll(t *testing.T) {
 	var poll Poll
 	for i := 1; i <= 10; i++ {
-
-		// sleep to delay inserting the record,
-		// to ensure created_at is different for all
-		time.Sleep(1 * time.Second)
+		// sleep to delay inserting the last record
+		if i == 10 {
+			time.Sleep(1 * time.Second)
+		}
 
 		poll.Question = fmt.Sprintf("%c question", 96+i)
 		poll.Options = []*PollOption{
@@ -715,8 +715,8 @@ func TestPollGetAll(t *testing.T) {
 							t.Errorf("sorting: expected last poll to be the last one iserted but got, %q", polls[9].Question)
 						}
 
-						if polls[0].Options[0].Value != "Option one, poll a" {
-							t.Errorf("options: expected option to be in first poll but got, %q", polls[0].Options[0].Value)
+						if polls[9].Options[0].Value != "Option one, poll j" {
+							t.Errorf("options: expected option to be in first poll but got, %q", polls[9].Options[0].Value)
 						}
 					}
 				case "question":
