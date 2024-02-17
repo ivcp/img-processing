@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 func Test_app_readIDParam(t *testing.T) {
@@ -20,9 +21,9 @@ func Test_app_readIDParam(t *testing.T) {
 		paramId     string
 		expectError bool
 	}{
-		{"valid id", "1", false},
-		{"invalid id", "a", true},
-		{"invalid id", "-5", true},
+		{"valid id", uuid.NewString(), false},
+		{"invalid id", "", true},
+		{"invalid id", "test", true},
 	}
 
 	for _, test := range tests {
@@ -82,8 +83,7 @@ func Test_app_readJSON(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var reader io.Reader
-			reader = strings.NewReader(test.json)
+			reader := strings.NewReader(test.json)
 			req, _ := http.NewRequest(http.MethodGet, "/", reader)
 			var dst struct {
 				Test string `json:"test"`
@@ -108,10 +108,10 @@ func getLargeJSONString(t *testing.T) string {
 	t.Helper()
 	largeJSONPath := "./testdata/large.json"
 	file, err := os.Open(largeJSONPath)
-	defer file.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer file.Close()
 	var js struct {
 		Test string `json:"test"`
 	}

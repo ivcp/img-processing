@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/ivcp/polls/internal/data"
 )
 
 func Test_app_showResultsHandler(t *testing.T) {
@@ -18,29 +20,29 @@ func Test_app_showResultsHandler(t *testing.T) {
 	}{
 		{
 			name:           "show results valid",
-			pollID:         "1",
+			pollID:         data.ExamplePollIDValid,
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "invalid poll id",
-			pollID:         "99",
+			pollID:         uuid.NewString(),
 			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:           "don't show results bofore voting",
-			pollID:         "35",
+			pollID:         data.ExamplePollIDAfterVote,
 			ip:             "10.10.10.10:10",
 			expectedStatus: http.StatusForbidden,
 		},
 		{
 			name:           "show results after voting",
-			pollID:         "35",
+			pollID:         data.ExamplePollIDAfterVote,
 			ip:             "0.0.0.1:0",
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "don't show results before deadline",
-			pollID:         "36",
+			pollID:         data.ExamplePollIDAfterDeadline,
 			ip:             "0.0.0.1:0",
 			expectedStatus: http.StatusForbidden,
 		},

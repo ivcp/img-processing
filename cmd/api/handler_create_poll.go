@@ -69,7 +69,7 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/polls/%d", poll.ID))
+	headers.Set("Location", fmt.Sprintf("/v1/polls/%s", poll.ID))
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"poll": poll}, headers)
 	if err != nil {

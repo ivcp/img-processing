@@ -13,8 +13,8 @@ func (app *application) updateOptionPositionHandler(w http.ResponseWriter, r *ht
 
 	var input struct {
 		Options []struct {
-			Id       int `json:"id"`
-			Position int `json:"position"`
+			Id       string `json:"id"`
+			Position int    `json:"position"`
 		} `json:"options"`
 	}
 
@@ -24,7 +24,7 @@ func (app *application) updateOptionPositionHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	optMap := make(map[int]int, len(input.Options))
+	optMap := make(map[string]int, len(input.Options))
 
 	for _, inputOpt := range input.Options {
 		optMap[inputOpt.Id] = inputOpt.Position

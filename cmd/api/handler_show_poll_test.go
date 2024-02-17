@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/ivcp/polls/internal/data"
 )
 
 func Test_app_showPollHandler(t *testing.T) {
@@ -17,10 +19,30 @@ func Test_app_showPollHandler(t *testing.T) {
 		expectedStatus int
 		expectedBody   string
 	}{
-		{"valid id", "1", http.StatusOK, `"question":"Test?"`},
-		{"invalid id", "-2", http.StatusBadRequest, `invalid id`},
-		{"invalid id", "a", http.StatusBadRequest, `invalid id`},
-		{"no record found", "44", http.StatusNotFound, `the requested resource could not be found`},
+		{
+			name:           "valid id",
+			id:             data.ExamplePollIDValid,
+			expectedStatus: http.StatusOK,
+			expectedBody:   `"question":"Test?"`,
+		},
+		{
+			name:           "invalid id",
+			id:             "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `invalid id`,
+		},
+		{
+			name:           "invalid id",
+			id:             "a",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `invalid id`,
+		},
+		{
+			name:           "no record found",
+			id:             uuid.NewString(),
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   `the requested resource could not be found`,
+		},
 	}
 
 	for _, test := range tests {

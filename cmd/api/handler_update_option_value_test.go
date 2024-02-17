@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/ivcp/polls/internal/data"
 )
 
 func Test_app_updateOptionValueHandler(t *testing.T) {
@@ -18,9 +20,27 @@ func Test_app_updateOptionValueHandler(t *testing.T) {
 		expectedStatus int
 		expectedBody   string
 	}{
-		{"valid update", "1", `{"value":"test"}`, http.StatusCreated, "option updated successfully"},
-		{"invalid id", "9", `{"value":"test"}`, http.StatusNotFound, "the requested resource could not be found"},
-		{"duplicate option values", "1", `{"value":"Two"}`, http.StatusUnprocessableEntity, "must not contain duplicate values"},
+		{
+			name:           "valid update",
+			optionID:       data.ExampleOptionID1,
+			json:           `{"value":"test"}`,
+			expectedStatus: http.StatusCreated,
+			expectedBody:   "option updated successfully",
+		},
+		{
+			name:           "invalid id",
+			optionID:       uuid.NewString(),
+			json:           `{"value":"test"}`,
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "the requested resource could not be found",
+		},
+		{
+			name:           "duplicate option values",
+			optionID:       data.ExampleOptionID1,
+			json:           `{"value":"Two"}`,
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   "must not contain duplicate values",
+		},
 	}
 
 	for _, test := range tests {
@@ -29,7 +49,7 @@ func Test_app_updateOptionValueHandler(t *testing.T) {
 			chiCtx := chi.NewRouteContext()
 			chiCtx.URLParams.Add("optionID", test.optionID)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
-			poll, _ := app.models.Polls.Get(1)
+			poll, _ := app.models.Polls.Get(data.ExamplePollIDValid)
 			req = req.WithContext(context.WithValue(req.Context(), ctxPollKey, poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.updateOptionValueHandler)

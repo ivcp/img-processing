@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/ivcp/polls/internal/data"
 )
 
 func Test_app_rateLimit(t *testing.T) {
@@ -79,7 +81,7 @@ func Test_app_requireToken(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, "/", nil)
 			chiCtx := chi.NewRouteContext()
-			chiCtx.URLParams.Add("pollID", "1")
+			chiCtx.URLParams.Add("pollID", data.ExamplePollIDValid)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			rr := httptest.NewRecorder()
 			if test.authHeader != "" {
@@ -100,13 +102,13 @@ func Test_app_requireToken(t *testing.T) {
 func Test_app_checkPollExpired(t *testing.T) {
 	tests := []struct {
 		name           string
-		pollID         int
+		pollID         string
 		expectedStatus int
 	}{
-		{"expired poll", 33, http.StatusForbidden},
-		{"valid poll", 1, http.StatusOK},
-		{"unexisting poll", 99, http.StatusNotFound},
-		{"expired_at not set", 34, http.StatusOK},
+		{"expired poll", data.ExamplePollIDExpiredPoll, http.StatusForbidden},
+		{"valid poll", data.ExamplePollIDValid, http.StatusOK},
+		{"unexisting poll", uuid.NewString(), http.StatusNotFound},
+		{"expired_at not set", data.ExamplePollIDExpiredNotSet, http.StatusOK},
 	}
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handlerToTest := app.checkPollExpired(nextHandler)

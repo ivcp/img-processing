@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/ivcp/polls/internal/data"
 )
 
 func Test_app_voteOptionHandler(t *testing.T) {
@@ -20,35 +22,35 @@ func Test_app_voteOptionHandler(t *testing.T) {
 	}{
 		{
 			name:           "valid vote",
-			pollID:         "1",
+			pollID:         data.ExamplePollIDValid,
 			ip:             "0.0.0.0:0",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "vote successful",
 		},
 		{
 			name:           "ip already voted",
-			pollID:         "1",
+			pollID:         data.ExamplePollIDValid,
 			ip:             "0.0.0.1:0",
 			expectedStatus: http.StatusForbidden,
 			expectedBody:   "you have already voted on this poll",
 		},
 		{
 			name:           "expired poll",
-			pollID:         "33",
+			pollID:         data.ExamplePollIDExpiredPoll,
 			ip:             "0.0.0.0:0",
 			expectedStatus: http.StatusForbidden,
 			expectedBody:   "poll has expired",
 		},
 		{
 			name:           "expired not set",
-			pollID:         "34",
+			pollID:         data.ExamplePollIDExpiredNotSet,
 			ip:             "0.0.0.0:0",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "vote successful",
 		},
 		{
 			name:           "unexisting poll",
-			pollID:         "99",
+			pollID:         uuid.NewString(),
 			ip:             "0.0.0.0:0",
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "the requested resource could not be found",
@@ -59,7 +61,7 @@ func Test_app_voteOptionHandler(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPost, "/", nil)
 			chiCtx := chi.NewRouteContext()
 			chiCtx.URLParams.Add("pollID", test.pollID)
-			chiCtx.URLParams.Add("optionID", "1")
+			chiCtx.URLParams.Add("optionID", data.ExampleOptionID1)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 			req.RemoteAddr = test.ip
 			rr := httptest.NewRecorder()

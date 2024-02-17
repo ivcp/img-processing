@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
 )
@@ -24,27 +25,29 @@ const (
 	ctxPollKey   contextKey = "poll"
 )
 
-func (app *application) pollIDfromContext(ctx context.Context) int {
-	return ctx.Value(ctxPollIDKey).(int)
+func (app *application) pollIDfromContext(ctx context.Context) string {
+	return ctx.Value(ctxPollIDKey).(string)
 }
 
 func (app *application) pollFromContext(ctx context.Context) *data.Poll {
 	return ctx.Value(ctxPollKey).(*data.Poll)
 }
 
-func (app *application) readIDParam(r *http.Request, id string) (int, error) {
-	param := chi.URLParam(r, id)
-	idInt, err := strconv.Atoi(param)
-	if err != nil || idInt < 1 {
-		return 0, errors.New("invalid id")
+func (app *application) readIDParam(r *http.Request, idKey string) (string, error) {
+	param := chi.URLParam(r, idKey)
+	if param == "" {
+		return "", errors.New("invalid id")
 	}
-	return idInt, nil
+	_, err := uuid.Parse(param)
+	if err != nil {
+		return "", errors.New("invalid id")
+	}
+	return param, nil
 }
 
 type envelope map[string]any
 
 func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
-	//
 	j, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -133,7 +136,7 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 	return i
 }
 
-func (app *application) checkIP(r *http.Request, pollID int, ip string) (bool, error) {
+func (app *application) checkIP(r *http.Request, pollID string, ip string) (bool, error) {
 	ips, err := app.models.Polls.GetVotedIPs(pollID)
 	if err != nil {
 		return false, fmt.Errorf("checkIP %s", err)

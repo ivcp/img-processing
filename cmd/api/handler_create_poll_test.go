@@ -153,7 +153,7 @@ func Test_app_createPollHandler(t *testing.T) {
 				expiresValid,
 			),
 			expectedStatus: http.StatusCreated,
-			expectedBody:   `{"poll":{"id":1,"question":"Test?"`,
+			expectedBody:   `"question":"Test?"`,
 		},
 		{
 			name: "invalid results_visibility",
@@ -181,7 +181,7 @@ func Test_app_createPollHandler(t *testing.T) {
 				expiresValid,
 			),
 			expectedStatus: http.StatusCreated,
-			expectedBody:   `{"poll":{"id":1,"question":"Test?"`,
+			expectedBody:   `"question":"Test?"`,
 		},
 	}
 
@@ -197,7 +197,10 @@ func Test_app_createPollHandler(t *testing.T) {
 			if !strings.Contains(rr.Body.String(), test.expectedBody) {
 				t.Errorf("expected body %q, but got %q", test.expectedBody, rr.Body)
 			}
-			if rr.Code == http.StatusCreated && rr.Header().Get("Location") != "/v1/polls/1" {
+			if rr.Code == http.StatusCreated && !strings.Contains(
+				rr.Header().Get("Location"),
+				"/v1/polls/",
+			) {
 				t.Errorf("Location does not contain link to created poll")
 			}
 		})

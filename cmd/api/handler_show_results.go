@@ -60,7 +60,7 @@ func (app *application) showResultsHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	type result struct {
-		ID        int    `json:"id"`
+		ID        string `json:"id"`
 		Value     string `json:"value"`
 		Position  int    `json:"position"`
 		VoteCount int    `json:"vote_count"`

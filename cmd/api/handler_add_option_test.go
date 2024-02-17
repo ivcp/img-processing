@@ -6,33 +6,32 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/ivcp/polls/internal/data"
 )
 
 func Test_app_addOptionHandler(t *testing.T) {
 	tests := []struct {
-		name           string
-		pollID         int
+		name string
+
 		json           string
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			name:           "valid add option",
-			pollID:         1,
 			json:           `{"value":"test", "position":3}`,
 			expectedStatus: http.StatusCreated,
 			expectedBody:   "option added successfully",
 		},
 		{
 			name:           "option already exists",
-			pollID:         1,
 			json:           `{"value":"Two", "position":2}`,
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   "must not contain duplicate values",
 		},
 		{
 			name:           "position not unique",
-			pollID:         1,
 			json:           `{"value":"test", "position":1}`,
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   "positions must be unique",
@@ -42,7 +41,7 @@ func Test_app_addOptionHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPost, "/", strings.NewReader(test.json))
-			poll, _ := app.models.Polls.Get(test.pollID)
+			poll, _ := app.models.Polls.Get(data.ExamplePollIDValid)
 			req = req.WithContext(context.WithValue(req.Context(), ctxPollKey, poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.addOptionHandler)

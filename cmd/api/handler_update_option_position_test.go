@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/ivcp/polls/internal/data"
 )
 
 func Test_app_updateOptionPositionHandler(t *testing.T) {
@@ -16,36 +20,41 @@ func Test_app_updateOptionPositionHandler(t *testing.T) {
 		expectedBody   string
 	}{
 		{
-			"valid update positions",
-			`{"options":[{"id":1, "position":1}, {"id":2, "position":0}]}`,
-			http.StatusOK,
-			"options updated successfully",
+			name: "valid update positions",
+			json: fmt.Sprintf(
+				`{"options":[{"id":%q, "position":1}, {"id":%q, "position":0}]}`,
+				data.ExampleOptionID1, data.ExampleOptionID2,
+			),
+			expectedStatus: http.StatusOK,
+			expectedBody:   "options updated successfully",
 		},
 		{
-			"invalid option id",
-
-			`{"options":[{"id":1, "position":1}, {"id":9, "position":0}]}`,
-			http.StatusBadRequest,
-			"invalid option id, or no id provided",
+			name: "invalid option id",
+			json: fmt.Sprintf(
+				`{"options":[{"id":%q, "position":1}, {"id":%q, "position":0}]}`,
+				data.ExampleOptionID1, uuid.NewString(),
+			),
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "invalid option id, or no id provided",
 		},
 		{
-			"invalid position change",
-			`{"options":[{"id":1, "position":1}]}`,
-			http.StatusUnprocessableEntity,
-			"positions must be unique",
+			name:           "invalid position change",
+			json:           fmt.Sprintf(`{"options":[{"id":%q, "position":1}]}`, data.ExampleOptionID1),
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedBody:   "positions must be unique",
 		},
 		{
-			"no options provided",
-			`{"options":[]}`,
-			http.StatusBadRequest,
-			"invalid option id, or no id provided",
+			name:           "no options provided",
+			json:           `{"options":[]}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "invalid option id, or no id provided",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodPatch, "/", strings.NewReader(test.json))
-			poll, _ := app.models.Polls.Get(1)
+			poll, _ := app.models.Polls.Get(data.ExamplePollIDValid)
 			req = req.WithContext(context.WithValue(req.Context(), ctxPollKey, poll))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.updateOptionPositionHandler)
