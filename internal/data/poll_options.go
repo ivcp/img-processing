@@ -196,32 +196,3 @@ func (p PollOptionModel) setUpdatedAt(pollID string) error {
 
 	return nil
 }
-
-// mocks
-type MockPollOptionModel struct {
-	DB *pgxpool.Pool
-}
-
-func (p MockPollOptionModel) Insert(option *PollOption, pollID string) error {
-	return nil
-}
-
-func (p MockPollOptionModel) UpdateValue(option *PollOption) error {
-	return nil
-}
-
-func (p MockPollOptionModel) UpdatePosition(options []*PollOption) error {
-	return nil
-}
-
-func (p MockPollOptionModel) Delete(optionID string) error {
-	return nil
-}
-
-func (p MockPollOptionModel) Vote(optionID string, pollID string, ip string) error {
-	return nil
-}
-
-func (p MockPollOptionModel) GetResults(pollID string) ([]*PollOption, error) {
-	return nil, nil
-}
