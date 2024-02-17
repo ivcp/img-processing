@@ -11,17 +11,17 @@ import (
 func (app *application) connectToDB() (*pgxpool.Pool, error) {
 	cfg, err := dbConfig(app.config.db.dsn)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create DB config: %w", err)
+		return nil, fmt.Errorf("failed to create DB config: %w", err)
 	}
 
 	connPoll, err := pgxpool.NewWithConfig(context.Background(), cfg)
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to the DB: %w", err)
+		return nil, fmt.Errorf("error connecting to the DB: %w", err)
 	}
 
 	err = connPoll.Ping(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to ping the DB: %w", err)
+		return nil, fmt.Errorf("eailed to ping the DB: %w", err)
 	}
 
 	app.logger.Println("Connected to DB!")
