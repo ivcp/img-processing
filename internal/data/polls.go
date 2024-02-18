@@ -61,7 +61,7 @@ func (p PollModel) Insert(poll *Poll, tokenHash []byte) error {
 	queryOptionsString.WriteString(
 		"INSERT INTO poll_options (value, poll_id, position, vote_count) VALUES ",
 	)
-	values := []any{}
+	values := make([]any, 0, len(poll.Options)*4)
 	count := 1
 
 	for i, opt := range poll.Options {
