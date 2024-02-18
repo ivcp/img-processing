@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgtype"
@@ -56,61 +57,49 @@ func (p PollModel) Insert(poll *Poll, tokenHash []byte) error {
 		return fmt.Errorf("insert poll: %w", err)
 	}
 
-	rows := make([][]any, 0, len(poll.Options))
+	var queryOptionsString strings.Builder
+	queryOptionsString.WriteString(
+		"INSERT INTO poll_options (value, poll_id, position, vote_count) VALUES ",
+	)
+	values := []any{}
+	count := 1
 
-	for _, opt := range poll.Options {
-		rows = append(rows, []any{opt.Value, poll.ID, opt.Position, opt.VoteCount})
+	for i, opt := range poll.Options {
+		var str string
+		comma := ","
+		if i == len(poll.Options)-1 {
+			comma = ""
+		}
+		str = fmt.Sprintf(
+			"($%d, $%d, $%d, $%d)%s ", count, count+1, count+2, count+3, comma,
+		)
+		queryOptionsString.WriteString(str)
+		values = append(values, opt.Value, poll.ID, opt.Position, opt.VoteCount)
+		count += 4
 	}
+	queryOptionsString.WriteString(" RETURNING id;")
 
 	ctx, cancel = context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
-	_, err = p.DB.CopyFrom(
-		ctx,
-		pgx.Identifier{"poll_options"},
-		[]string{"value", "poll_id", "position", "vote_count"},
-		pgx.CopyFromRows(rows),
-	)
 
+	rows, err := p.DB.Query(ctx, queryOptionsString.String(), values...)
 	if err != nil {
 		return fmt.Errorf("insert poll options: %w", err)
 	}
+	defer rows.Close()
 
-	queryOptions := `
-			SELECT id, value, position, vote_count
-			FROM poll_options
-			WHERE poll_id = $1;
-		`
-
-	options := make([]*PollOption, 0, len(poll.Options))
-
-	ctx, cancel = context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
-
-	rowsOpts, err := p.DB.Query(ctx, queryOptions, poll.ID)
-	if err != nil {
-		return fmt.Errorf("insert poll - get poll options: %w", err)
-	}
-	defer rowsOpts.Close()
-
-	for rowsOpts.Next() {
-		var pollOption PollOption
-		err := rowsOpts.Scan(
-			&pollOption.ID,
-			&pollOption.Value,
-			&pollOption.Position,
-			&pollOption.VoteCount,
-		)
+	optionIndex := 0
+	for rows.Next() {
+		err := rows.Scan(&poll.Options[optionIndex].ID)
 		if err != nil {
-			return fmt.Errorf("insert poll - get poll options: %w", err)
+			return fmt.Errorf("scan option id: %w", err)
 		}
-		options = append(options, &pollOption)
+		optionIndex++
 	}
 
-	if err := rowsOpts.Err(); err != nil {
-		return fmt.Errorf("insert poll - get poll options: %w", err)
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("insert poll options: %w", err)
 	}
-
-	poll.Options = options
 
 	queryToken := `
 		INSERT INTO tokens (hash, poll_id)
