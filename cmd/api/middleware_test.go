@@ -126,3 +126,50 @@ func Test_app_checkPollExpired(t *testing.T) {
 		})
 	}
 }
+
+func Test_app_enableCORS(t *testing.T) {
+	tests := []struct {
+		name      string
+		method    string
+		origin    string
+		reqMethod string
+	}{
+		{"regular req", http.MethodGet, "", ""},
+		{"preflight req", http.MethodOptions, "localhost:8080", http.MethodPost},
+	}
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handlerToTest := app.enableCORS(nextHandler)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req, _ := http.NewRequest(test.method, "/", nil)
+			req.Header.Set("Origin", test.origin)
+			req.Header.Set("Access-Control-Request-Method", test.reqMethod)
+			rr := httptest.NewRecorder()
+			handlerToTest.ServeHTTP(rr, req)
+			result := rr.Result()
+			if result.Header.Get("Access-Control-Allow-Origin") != "*" {
+				t.Errorf(
+					"Access-Control-Allow-Origin header not set to '*', got %q",
+					result.Header.Get("Access-Control-Allow-Origin"),
+				)
+			}
+
+			if req.Method == http.MethodOptions {
+				if result.Header.Get("Access-Control-Allow-Methods") != "OPTIONS, PATCH, DELETE" {
+					t.Errorf(
+						"Access-Control-Allow-Methods not set to OPTIONS, PATCH, DELETE, got %q",
+						result.Header.Get("Access-Control-Allow-Methods"),
+					)
+				}
+				if result.Header.Get("Access-Control-Allow-Headers") != "Authorization, Content-Type" {
+					t.Errorf(
+						"Access-Control-Allow-Headers not set to 'Authorization, Content-Type', got %q",
+						result.Header.Get("Access-Control-Allow-Headers"),
+					)
+				}
+			}
+		})
+	}
+}
