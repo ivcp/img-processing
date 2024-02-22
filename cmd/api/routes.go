@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,6 +11,7 @@ import (
 func (app *application) routes() http.Handler {
 	mux := chi.NewRouter()
 
+	mux.Use(app.metrics)
 	mux.Use(middleware.Recoverer)
 	mux.Use(app.enableCORS)
 	mux.Use(app.rateLimit)
@@ -34,6 +36,8 @@ func (app *application) routes() http.Handler {
 			mux.Delete("/v1/polls/{pollID}/options/{optionID}", app.deleteOptionHandler)
 		})
 	})
+
+	mux.Method(http.MethodGet, "/v1/metrics", expvar.Handler())
 
 	return mux
 }

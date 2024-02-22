@@ -39,6 +39,7 @@ type application struct {
 func main() {
 	var cfg config
 	var app application
+
 	flag.IntVar(&cfg.port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(
@@ -63,6 +64,8 @@ func main() {
 	}
 	defer db.Close()
 	app.models = data.NewModels(db)
+
+	app.setMetrics(db)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),

@@ -4,18 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"expvar"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type contextKey string
@@ -150,4 +154,42 @@ func (app *application) checkIP(r *http.Request, pollID string, ip string) (bool
 	}
 
 	return voted, nil
+}
+
+func (app *application) setMetrics(db *pgxpool.Pool) {
+	expvar.NewString("version").Set(version)
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+	expvar.Publish("database", expvar.Func(func() any {
+		return struct {
+			MaxConns                int32
+			TotalCons               int32
+			NewConnsCount           int64
+			AcquiredConns           int32
+			IdleConns               int32
+			MaxIdleDestroyCount     int64
+			MaxLifetimeDestroyCount int64
+			TotalDuration           time.Duration
+			Canceled                int64
+			ConstructingConns       int32
+			EmptyAcquireCount       int64
+		}{
+			db.Stat().MaxConns(),
+			db.Stat().TotalConns(),
+			db.Stat().NewConnsCount(),
+			db.Stat().AcquiredConns(),
+			db.Stat().IdleConns(),
+			db.Stat().MaxIdleDestroyCount(),
+			db.Stat().MaxLifetimeDestroyCount(),
+			db.Stat().AcquireDuration(),
+			db.Stat().CanceledAcquireCount(),
+			db.Stat().ConstructingConns(),
+			db.Stat().EmptyAcquireCount(),
+		}
+	}))
+
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 }
