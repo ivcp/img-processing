@@ -53,8 +53,12 @@ func main() {
 		logger.Fatal("dsn string not set")
 	}
 	cfg.db.dsn = dsn
+	env := os.Getenv("SERVER_ENV")
+	if env == "" {
+		logger.Fatal("dsn string not set")
+	}
+	cfg.env = env
 
-	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests persecond")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")

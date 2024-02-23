@@ -6,6 +6,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.5.1
+	github.com/joho/godotenv v1.5.1
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pressly/goose v2.7.0+incompatible
 	golang.org/x/time v0.5.0

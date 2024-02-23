@@ -2,3 +2,5 @@
 /cmd/api/coverage.out
 /internal/data/coverage.out
 /bin/api
+.env
+main

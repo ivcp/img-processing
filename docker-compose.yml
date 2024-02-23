@@ -1,13 +1,24 @@
-version: "3.9"
-
 services:
+  server:
+    image: app
+    restart: unless-stopped
+    environment:
+      DB_DSN: ${DB_DSN}
+      SERVER_PORT: ${SERVER_PORT}
+      SERVER_ENV: ${SERVER_ENV}      
+    build: .
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+
   db:
     image: postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: polls
+    volumes:
+      - polls-db-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
 
@@ -15,4 +26,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8090:8080
+      - 8000:8080
+
+volumes:
+  polls-db-data:
