@@ -6,16 +6,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/ivcp/polls/internal/data"
-	"github.com/ivcp/polls/internal/vsc"
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-var version = vsc.Version()
+var version = "1.0.0"
 
 type config struct {
 	port int
@@ -40,30 +40,28 @@ type application struct {
 func main() {
 	var cfg config
 	var app application
+	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	app.logger = logger
 
-	flag.IntVar(&cfg.port, "port", 8080, "API server port")
+	port, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
+	if err != nil {
+		logger.Fatal(err)
+	}
+	cfg.port = port
+	dsn := os.Getenv("DB_DSN")
+	if dsn == "" {
+		logger.Fatal("dsn string not set")
+	}
+	cfg.db.dsn = dsn
+
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
-	flag.StringVar(
-		&cfg.db.dsn,
-		"db-dsn",
-		os.Getenv("POLLS_DB_DSN"),
-		"DSN string")
-
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests persecond")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
-	displayVersion := flag.Bool("version", false, "Display version and exit")
+
 	flag.Parse()
 
-	if *displayVersion {
-		fmt.Printf("Version:\t%s\n", version)
-		os.Exit(0)
-	}
-
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-
 	app.config = cfg
-	app.logger = logger
 
 	db, err := app.connectToDB()
 	if err != nil {
