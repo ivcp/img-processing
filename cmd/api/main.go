@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/ivcp/polls/internal/data"
+	"github.com/ivcp/polls/internal/vsc"
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-const version = "1.0.0"
+var version = vsc.Version()
 
 type config struct {
 	port int
@@ -51,7 +52,13 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests persecond")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
+	displayVersion := flag.Bool("version", false, "Display version and exit")
 	flag.Parse()
+
+	if *displayVersion {
+		fmt.Printf("Version:\t%s\n", version)
+		os.Exit(0)
+	}
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
