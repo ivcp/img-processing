@@ -15,7 +15,7 @@ func (app *application) connectToDB() (*pgxpool.Pool, error) {
 
 	err = connPoll.Ping(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("eailed to ping the DB: %w", err)
+		return nil, fmt.Errorf("failed to ping the DB: %w", err)
 	}
 
 	app.logger.Println("Connected to DB!")
