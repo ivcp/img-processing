@@ -11,6 +11,8 @@ COPY ./cmd/api ./api
 
 COPY ./internal ./internal
 
+COPY ./migrations ./migrations
+
 RUN cd api && go build -o main
 
 EXPOSE ${SERVER_PORT}
@@ -19,3 +21,5 @@ CMD cd api && ./main
 
 
 
+#tests
+#run migrations
