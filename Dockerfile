@@ -1,5 +1,5 @@
 
-FROM golang:1.21.3
+FROM golang:1.21.3 AS build-stage
 
 WORKDIR /app
 
@@ -11,15 +11,21 @@ COPY ./cmd/api ./api
 
 COPY ./internal ./internal
 
+RUN cd api && go build -o main
+
+FROM gcr.io/distroless/base-debian12 
+
+WORKDIR /
+
 COPY ./migrations ./migrations
 
-RUN cd api && go build -o main
+COPY --from=build-stage /app/api/main /main
 
 EXPOSE ${SERVER_PORT}
 
-CMD cd api && ./main 
+CMD ["/main"] 
 
 
 
-#tests
-#run migrations
+
+
