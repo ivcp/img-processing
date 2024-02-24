@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
-	"github.com/pressly/goose"
+	"github.com/pressly/goose/v3"
 )
 
 var (
