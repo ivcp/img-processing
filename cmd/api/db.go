@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 )
 
 func (app *application) connectToDB() (*pgxpool.Pool, error) {
@@ -21,4 +23,17 @@ func (app *application) connectToDB() (*pgxpool.Pool, error) {
 	app.logger.Println("Connected to DB!")
 
 	return connPoll, nil
+}
+
+func (app *application) runMigrations(db *pgxpool.Pool, dir string) error {
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("migrate: %w", err)
+	}
+	database := stdlib.OpenDBFromPool(db)
+
+	if err := goose.Up(database, dir); err != nil {
+		return fmt.Errorf("migrate: %w", err)
+	}
+
+	return nil
 }

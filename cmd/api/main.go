@@ -72,6 +72,11 @@ func main() {
 		logger.Fatal(err)
 	}
 	defer db.Close()
+
+	if err = app.runMigrations(db, "../migrations"); err != nil {
+		logger.Fatal(err)
+	}
+
 	app.models = data.NewModels(db)
 
 	app.setMetrics(db)
