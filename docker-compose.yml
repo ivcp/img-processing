@@ -2,10 +2,12 @@ services:
   server:
     image: app
     restart: unless-stopped
+    depends_on:
+      - db
     environment:
       DB_DSN: ${DB_DSN}
       SERVER_PORT: ${SERVER_PORT}
-      SERVER_ENV: ${SERVER_ENV}      
+      SERVER_ENV: ${SERVER_ENV}
     build: .
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}
