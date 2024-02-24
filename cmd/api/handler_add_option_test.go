@@ -12,29 +12,22 @@ import (
 
 func Test_app_addOptionHandler(t *testing.T) {
 	tests := []struct {
-		name string
-
+		name           string
 		json           string
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			name:           "valid add option",
-			json:           `{"value":"test", "position":3}`,
+			json:           `{"value":"test"}`,
 			expectedStatus: http.StatusCreated,
 			expectedBody:   "option added successfully",
 		},
 		{
 			name:           "option already exists",
-			json:           `{"value":"Two", "position":2}`,
+			json:           `{"value":"Two"}`,
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   "must not contain duplicate values",
-		},
-		{
-			name:           "position not unique",
-			json:           `{"value":"test", "position":1}`,
-			expectedStatus: http.StatusUnprocessableEntity,
-			expectedBody:   "positions must be unique",
 		},
 	}
 

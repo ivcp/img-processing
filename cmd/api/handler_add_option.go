@@ -11,8 +11,7 @@ func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request)
 	poll := app.pollFromContext(r.Context())
 
 	var input struct {
-		Value    string `json:"value"`
-		Position int    `json:"position"`
+		Value string `json:"value"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -23,7 +22,7 @@ func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request)
 
 	newOption := &data.PollOption{
 		Value:    input.Value,
-		Position: input.Position,
+		Position: len(poll.Options),
 	}
 
 	poll.Options = append(poll.Options, newOption)
