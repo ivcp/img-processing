@@ -36,10 +36,7 @@ msg "Removing stale images"
 
 $cmd docker image prune -f
 
-
 msg "Finished in $SECONDS seconds"
 
-echo "Press Enter to exit"
-read
 
 
