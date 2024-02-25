@@ -10,8 +10,8 @@ source .env
 cmd=""
 
 if [[ $SERVER_ENV == "production" ]]; then 
-    # git pull
-    echo "hi"
+    msg "Pulling from github"
+    git pull
     cmd="sudo"
 fi
 
