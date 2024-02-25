@@ -7,7 +7,7 @@ msg () {
 }
 
 dir="$(dirname "$0")"
-source "$dir/polls/.env"
+source "$dir/.env"
 
 cmd=""
 
