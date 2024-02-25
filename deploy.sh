@@ -6,7 +6,9 @@ msg () {
     echo -e "\n******* $1 *******\n"
 }
 
-source .env
+dir="$(dirname "$0")"
+source "$dir/polls/.env"
+
 cmd=""
 
 if [[ $SERVER_ENV == "production" ]]; then 
