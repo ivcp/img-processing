@@ -6,13 +6,12 @@ msg () {
     echo -e "\n******* $1 *******\n"
 }
 
-
+cd polls/
 source .env
-
 cmd=""
 
 if [[ $SERVER_ENV == "production" ]]; then 
-    msg "Pulling from github"
+    msg "Pulling from github"    
     git pull
     cmd="sudo"
 fi
