@@ -1,6 +1,6 @@
 services:
-  server:
-    image: app
+  api:
+    image: api
     restart: unless-stopped
     depends_on:
       - db
@@ -30,5 +30,21 @@ services:
     ports:
       - 8000:8080
 
+  caddy:
+    image: caddy:2.7.6-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SERVER_PORT: ${SERVER_PORT}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   polls-db-data:
+  caddy_data:
+  caddy_config:
