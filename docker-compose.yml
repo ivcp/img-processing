@@ -30,5 +30,19 @@ services:
     ports:
       - 8000:8080
 
+  caddy:
+    image: caddy:2.7.6-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   polls-db-data:
+  caddy_data:
+  caddy_config:
