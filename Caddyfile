@@ -1,3 +1,0 @@
-http://ec2-3-75-231-58.eu-central-1.compute.amazonaws.com {
-	reverse_proxy app:9880
-}
