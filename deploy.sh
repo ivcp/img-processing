@@ -26,7 +26,7 @@ $cmd docker compose build
 
 msg "Stopping containers"
 
-$cmd docker compose down
+$cmd docker compose down --remove-orphans
 
 msg "Starting containers"
 
