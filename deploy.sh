@@ -6,8 +6,8 @@ msg () {
     echo -e "\n******* $1 *******\n"
 }
 
-dir="$(dirname "$0")"
-source "$dir/.env"
+
+source .env
 
 cmd=""
 
