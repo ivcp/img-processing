@@ -6,7 +6,10 @@ msg () {
     echo -e "\n******* $1 *******\n"
 }
 
-cd polls/
+if [ -d polls/ ]; then
+    cd polls/
+fi
+
 source .env
 cmd=""
 
