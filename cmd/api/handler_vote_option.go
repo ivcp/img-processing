@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"net"
 	"net/http"
 	"time"
 
@@ -38,9 +37,9 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		app.serverErrorResponse(w, r, errors.New("no ip found"))
 		return
 	}
 
