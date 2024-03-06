@@ -12,7 +12,7 @@ import (
 func (app *application) showResultsHandler(w http.ResponseWriter, r *http.Request) {
 	pollID, err := app.readIDParam(r, "pollID")
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
@@ -22,7 +22,7 @@ func (app *application) showResultsHandler(w http.ResponseWriter, r *http.Reques
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			app.serverErrorResponse(w, err)
 		}
 		return
 	}
@@ -32,30 +32,30 @@ func (app *application) showResultsHandler(w http.ResponseWriter, r *http.Reques
 		if poll.ExpiresAt.Time.Before(time.Now()) {
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
-				app.serverErrorResponse(w, r, err)
+				app.serverErrorResponse(w, err)
 				return
 			}
-			voted, err := app.checkIP(r, pollID, ip)
+			voted, err := app.checkIP(pollID, ip)
 			if err != nil {
-				app.serverErrorResponse(w, r, err)
+				app.serverErrorResponse(w, err)
 				return
 			}
 			if !voted {
-				app.cannotShowResultsResponse(w, r, "after voting")
+				app.cannotShowResultsResponse(w, "after voting")
 				return
 			}
 		}
 
 	case "after_deadline":
 		if !poll.ExpiresAt.Time.IsZero() && poll.ExpiresAt.Time.After(time.Now()) {
-			app.cannotShowResultsResponse(w, r, "when poll expires")
+			app.cannotShowResultsResponse(w, "when poll expires")
 			return
 		}
 	}
 
 	options, err := app.models.PollOptions.GetResults(pollID)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 
@@ -79,6 +79,6 @@ func (app *application) showResultsHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"results": results}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

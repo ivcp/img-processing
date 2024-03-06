@@ -39,9 +39,11 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if app.config.limiter.enabled {
 
+			// TODO: fix
+
 			ip := r.Header.Get("X-Forwarded-For")
 			if ip == "" {
-				app.serverErrorResponse(w, r, errors.New("no ip found"))
+				app.serverErrorResponse(w, errors.New("no ip found"))
 				return
 			}
 
@@ -60,7 +62,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 			if !clients[ip].limiter.Allow() {
 				app.mutex.Unlock()
-				app.rateLimitExcededResponse(w, r)
+				app.rateLimitExcededResponse(w)
 				return
 			}
 
@@ -74,13 +76,13 @@ func (app *application) requireToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authorizationHeader := r.Header.Get("Authorization")
 		if authorizationHeader == "" {
-			app.invalidTokenResponse(w, r)
+			app.invalidTokenResponse(w)
 			return
 		}
 
 		headerParts := strings.Split(authorizationHeader, " ")
 		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-			app.invalidTokenResponse(w, r)
+			app.invalidTokenResponse(w)
 			return
 		}
 
@@ -89,24 +91,24 @@ func (app *application) requireToken(next http.Handler) http.Handler {
 		v := validator.New()
 
 		if data.ValidateTokenPlaintext(v, token); !v.Valid() {
-			app.invalidTokenResponse(w, r)
+			app.invalidTokenResponse(w)
 			return
 		}
 
 		pollID, err := app.models.Polls.CheckToken(token)
 		if err != nil {
-			app.invalidTokenResponse(w, r)
+			app.invalidTokenResponse(w)
 			return
 		}
 
 		paramPollID, err := app.readIDParam(r, "pollID")
 		if err != nil {
-			app.badRequestResponse(w, r, err)
+			app.badRequestResponse(w, err)
 			return
 		}
 
 		if pollID != paramPollID {
-			app.badRequestResponse(w, r, fmt.Errorf("token not valid for this poll"))
+			app.badRequestResponse(w, fmt.Errorf("token not valid for this poll"))
 			return
 		}
 
@@ -128,13 +130,13 @@ func (app *application) checkPollExpired(next http.Handler) http.Handler {
 			case errors.Is(err, data.ErrRecordNotFound):
 				app.notFoundResponse(w, r)
 			default:
-				app.serverErrorResponse(w, r, err)
+				app.serverErrorResponse(w, err)
 			}
 			return
 		}
 
 		if !poll.ExpiresAt.Time.IsZero() && poll.ExpiresAt.Time.Before(time.Now()) {
-			app.pollExpiredResponse(w, r)
+			app.pollExpiredResponse(w)
 			return
 		}
 

@@ -10,7 +10,7 @@ import (
 func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r, "pollID")
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
@@ -20,13 +20,13 @@ func (app *application) showPollHandler(w http.ResponseWriter, r *http.Request) 
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			app.serverErrorResponse(w, err)
 		}
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"poll": poll}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

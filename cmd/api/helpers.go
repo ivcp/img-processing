@@ -140,7 +140,7 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 	return i
 }
 
-func (app *application) checkIP(r *http.Request, pollID string, ip string) (bool, error) {
+func (app *application) checkIP(pollID string, ip string) (bool, error) {
 	ips, err := app.models.Polls.GetVotedIPs(pollID)
 	if err != nil {
 		return false, fmt.Errorf("checkIP %s", err)

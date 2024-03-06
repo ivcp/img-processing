@@ -4,61 +4,61 @@ import (
 	"net/http"
 )
 
-func (app *application) logError(r *http.Request, err error) {
+func (app *application) logError(err error) {
 	app.logger.Print(err)
 }
 
-func (app *application) errorJSONResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
+func (app *application) errorJSONResponse(w http.ResponseWriter, status int, message any) {
 	env := envelope{"error": message}
 
 	err := app.writeJSON(w, status, env, nil)
 	if err != nil {
-		app.logError(r, err)
+		app.logError(err)
 		w.WriteHeader(500)
 	}
 }
 
-func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
-	app.logError(r, err)
+func (app *application) serverErrorResponse(w http.ResponseWriter, err error) {
+	app.logError(err)
 	message := "the server encountered a problem and could not process your request"
-	app.errorJSONResponse(w, r, http.StatusInternalServerError, message)
+	app.errorJSONResponse(w, http.StatusInternalServerError, message)
 }
 
 func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request) {
 	message := "the requested resource could not be found"
-	app.errorJSONResponse(w, r, http.StatusNotFound, message)
+	app.errorJSONResponse(w, http.StatusNotFound, message)
 }
 
-func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
-	app.errorJSONResponse(w, r, http.StatusBadRequest, err.Error())
+func (app *application) badRequestResponse(w http.ResponseWriter, err error) {
+	app.errorJSONResponse(w, http.StatusBadRequest, err.Error())
 }
 
-func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
-	app.errorJSONResponse(w, r, http.StatusUnprocessableEntity, errors)
+func (app *application) failedValidationResponse(w http.ResponseWriter, errors map[string]string) {
+	app.errorJSONResponse(w, http.StatusUnprocessableEntity, errors)
 }
 
-func (app *application) rateLimitExcededResponse(w http.ResponseWriter, r *http.Request) {
+func (app *application) rateLimitExcededResponse(w http.ResponseWriter) {
 	message := "rate limit exceeded"
-	app.errorJSONResponse(w, r, http.StatusTooManyRequests, message)
+	app.errorJSONResponse(w, http.StatusTooManyRequests, message)
 }
 
-func (app *application) cannotVoteResponse(w http.ResponseWriter, r *http.Request) {
+func (app *application) cannotVoteResponse(w http.ResponseWriter) {
 	message := "you have already voted on this poll"
-	app.errorJSONResponse(w, r, http.StatusForbidden, message)
+	app.errorJSONResponse(w, http.StatusForbidden, message)
 }
 
-func (app *application) pollExpiredResponse(w http.ResponseWriter, r *http.Request) {
+func (app *application) pollExpiredResponse(w http.ResponseWriter) {
 	message := "poll has expired"
-	app.errorJSONResponse(w, r, http.StatusForbidden, message)
+	app.errorJSONResponse(w, http.StatusForbidden, message)
 }
 
-func (app *application) cannotShowResultsResponse(w http.ResponseWriter, r *http.Request, msg string) {
+func (app *application) cannotShowResultsResponse(w http.ResponseWriter, msg string) {
 	message := "results will be available " + msg
-	app.errorJSONResponse(w, r, http.StatusForbidden, message)
+	app.errorJSONResponse(w, http.StatusForbidden, message)
 }
 
-func (app *application) invalidTokenResponse(w http.ResponseWriter, r *http.Request) {
+func (app *application) invalidTokenResponse(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", "Bearer")
 	message := "invalid or missing token"
-	app.errorJSONResponse(w, r, http.StatusUnauthorized, message)
+	app.errorJSONResponse(w, http.StatusUnauthorized, message)
 }

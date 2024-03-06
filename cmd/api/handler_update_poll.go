@@ -20,7 +20,7 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
@@ -37,25 +37,25 @@ func (app *application) updatePollHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if input.Question == nil && input.Description == nil && input.ExpiresAt.IsZero() {
-		app.badRequestResponse(w, r, errors.New("no fields provided for update"))
+		app.badRequestResponse(w, errors.New("no fields provided for update"))
 		return
 	}
 
 	v := validator.New()
 
 	if data.ValidatePoll(v, poll); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
+		app.failedValidationResponse(w, v.Errors)
 		return
 	}
 
 	err = app.models.Polls.Update(poll)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"poll": poll}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

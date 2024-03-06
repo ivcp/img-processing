@@ -12,7 +12,7 @@ func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Reque
 
 	optionID, err := app.readIDParam(r, "optionID")
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
@@ -45,24 +45,24 @@ func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 	if data.ValidatePoll(v, poll); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
+		app.failedValidationResponse(w, v.Errors)
 		return
 	}
 
 	err = app.models.PollOptions.Delete(optionID)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 
 	err = app.models.PollOptions.UpdatePosition(poll.Options)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "option deleted successfully"}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

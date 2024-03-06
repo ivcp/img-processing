@@ -16,7 +16,7 @@ func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request)
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
@@ -30,18 +30,18 @@ func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request)
 	v := validator.New()
 
 	if data.ValidatePoll(v, poll); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
+		app.failedValidationResponse(w, v.Errors)
 		return
 	}
 
 	err = app.models.PollOptions.Insert(newOption, poll.ID)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"message": "option added successfully"}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

@@ -16,13 +16,13 @@ func (app *application) deletePollHandler(w http.ResponseWriter, r *http.Request
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			app.serverErrorResponse(w, err)
 		}
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "poll successfully deleted"}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

@@ -24,7 +24,7 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
@@ -51,20 +51,20 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 
 	v := validator.New()
 	if data.ValidatePoll(v, poll); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
+		app.failedValidationResponse(w, v.Errors)
 		return
 	}
 
 	token, err := data.GenerateToken()
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 	poll.Token = token.Plaintext
 
 	err = app.models.Polls.Insert(poll, token.Hash)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 
@@ -73,6 +73,6 @@ func (app *application) createPollHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"poll": poll}, headers)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

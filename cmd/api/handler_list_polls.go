@@ -24,13 +24,13 @@ func (app *application) listPollsHandler(w http.ResponseWriter, r *http.Request)
 	input.Filters.SortSafelist = []string{"created_at", "question", "-created_at", "-question"}
 
 	if data.ValidateFilters(v, input.Filters); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
+		app.failedValidationResponse(w, v.Errors)
 		return
 	}
 
 	polls, metadata, err := app.models.Polls.GetAll(input.Search, input.Filters)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		return
 	}
 
@@ -40,6 +40,6 @@ func (app *application) listPollsHandler(w http.ResponseWriter, r *http.Request)
 		envelope{"polls": polls, "metadata": metadata},
 		nil,
 	); err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }

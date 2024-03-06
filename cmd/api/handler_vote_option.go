@@ -11,13 +11,13 @@ import (
 func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request) {
 	pollID, err := app.readIDParam(r, "pollID")
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
 	optionID, err := app.readIDParam(r, "optionID")
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.badRequestResponse(w, err)
 		return
 	}
 
@@ -27,31 +27,31 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			app.serverErrorResponse(w, err)
 		}
 		return
 	}
 
 	if !poll.ExpiresAt.Time.IsZero() && poll.ExpiresAt.Time.Before(time.Now()) {
-		app.pollExpiredResponse(w, r)
+		app.pollExpiredResponse(w)
 		return
 	}
 
 	ip := r.Header.Get("X-Forwarded-For")
 	if ip == "" {
-		app.serverErrorResponse(w, r, errors.New("no ip found"))
+		app.serverErrorResponse(w, errors.New("no ip found"))
 		return
 	}
 
 	app.mutex.Lock()
-	voted, err := app.checkIP(r, poll.ID, ip)
+	voted, err := app.checkIP(poll.ID, ip)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 		app.mutex.Unlock()
 		return
 	}
 	if voted {
-		app.cannotVoteResponse(w, r)
+		app.cannotVoteResponse(w)
 		app.mutex.Unlock()
 		return
 	}
@@ -62,7 +62,7 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			app.serverErrorResponse(w, err)
 		}
 		app.mutex.Unlock()
 		return
@@ -72,6 +72,6 @@ func (app *application) voteOptionHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "vote successful"}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.serverErrorResponse(w, err)
 	}
 }
