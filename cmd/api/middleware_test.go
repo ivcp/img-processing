@@ -20,7 +20,8 @@ func Test_app_rateLimit(t *testing.T) {
 
 	handlerToTest := app.rateLimit(nextHandler)
 	req, _ := http.NewRequest(http.MethodGet, "/", nil)
-	req.RemoteAddr = "0.0.0.0:0000"
+
+	req.Header.Set("X-Forwarded-For", "0.0.0.0:0000")
 	rr := httptest.NewRecorder()
 	for i := 0; i < 6; i++ {
 		handlerToTest.ServeHTTP(rr, req)
