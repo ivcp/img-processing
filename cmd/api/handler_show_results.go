@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"net"
 	"net/http"
 	"time"
 
@@ -30,11 +29,12 @@ func (app *application) showResultsHandler(w http.ResponseWriter, r *http.Reques
 	switch poll.ResultsVisibility {
 	case "after_vote":
 		if poll.ExpiresAt.Time.Before(time.Now()) {
-			ip, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				app.serverErrorResponse(w, err)
+			ip := r.Header.Get("X-Forwarded-For")
+			if ip == "" {
+				app.serverErrorResponse(w, errors.New("no ip found"))
 				return
 			}
+
 			voted, err := app.checkIP(pollID, ip)
 			if err != nil {
 				app.serverErrorResponse(w, err)
