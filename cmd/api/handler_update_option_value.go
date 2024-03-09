@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
@@ -31,7 +32,7 @@ func (app *application) updateOptionValueHandler(w http.ResponseWriter, r *http.
 
 	for _, opt := range poll.Options {
 		if opt.ID == optionID {
-			opt.Value = input.Value
+			opt.Value = strings.TrimSpace(input.Value)
 			optionToUpdate = opt
 			match = true
 		}

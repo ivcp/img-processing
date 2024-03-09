@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/ivcp/polls/internal/data"
 	"github.com/ivcp/polls/internal/validator"
@@ -21,7 +22,7 @@ func (app *application) addOptionHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	newOption := &data.PollOption{
-		Value:    input.Value,
+		Value:    strings.TrimSpace(input.Value),
 		Position: len(poll.Options),
 	}
 
