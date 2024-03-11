@@ -39,8 +39,6 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if app.config.limiter.enabled {
 
-			// TODO: fix
-
 			ip := r.Header.Get("X-Forwarded-For")
 			if ip == "" {
 				app.serverErrorResponse(w, errors.New("no ip found"))
