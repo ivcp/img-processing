@@ -204,13 +204,18 @@ func (app *application) metrics(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		totalRequestsReceived.Add(1)
+		if r.URL.Path != "/" {
+			app.logger.Println(r.Header)
+			totalRequestsReceived.Add(1)
+		}
 		mw := &metricsResponseWriter{wrapped: w}
 		next.ServeHTTP(mw, r)
-		totalResponsesSent.Add(1)
-		totalResponsesSentByStatus.Add(strconv.Itoa(mw.statusCode), 1)
-		duration := time.Since(start).Microseconds()
-		totalProcessingTimeMicroseconds.Add(duration)
-		averageProcessingTimePerRequest.Set(totalProcessingTimeMicroseconds.Value() / totalResponsesSent.Value())
+		if r.URL.Path != "/" {
+			totalResponsesSent.Add(1)
+			totalResponsesSentByStatus.Add(strconv.Itoa(mw.statusCode), 1)
+			duration := time.Since(start).Microseconds()
+			totalProcessingTimeMicroseconds.Add(duration)
+			averageProcessingTimePerRequest.Set(totalProcessingTimeMicroseconds.Value() / totalResponsesSent.Value())
+		}
 	})
 }
