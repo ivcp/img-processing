@@ -205,7 +205,6 @@ func (app *application) metrics(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		if r.URL.Path != "/" {
-			app.logger.Println(r.Header)
 			totalRequestsReceived.Add(1)
 		}
 		mw := &metricsResponseWriter{wrapped: w}
