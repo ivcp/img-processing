@@ -1,5 +1,5 @@
 #!/bin/bash
 dir="$(dirname "$0")"
 
-ssh -t ubuntu@ec2-3-75-231-58.eu-central-1.compute.amazonaws.com \
+ssh -t ubuntu@polls.ovh \
  bash "$dir/polls/build.sh"
