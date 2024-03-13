@@ -2,7 +2,7 @@
  email ivan.perovic@pm.me
 }
 
-{$DOMAIN::80} {
+{$DOMAIN} {
  respond /v1/metrics "Not Permitted" 403
  reverse_proxy api:{$SERVER_PORT}
 }
