@@ -1,8 +1,8 @@
-{
+{ 
  email ivan.perovic@pm.me
 }
 
-polls.ovh {
+{$DOMAIN::80} {
  respond /v1/metrics "Not Permitted" 403
  reverse_proxy api:{$SERVER_PORT}
 }
