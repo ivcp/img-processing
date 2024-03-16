@@ -18,6 +18,7 @@ var (
 	ExamplePollIDExpiredNotSet = "e4dd6db9-fa83-45d2-81dd-1f93019a25a2"
 	ExamplePollIDAfterVote     = "6e3e617f-b5e6-4627-a2db-c72e29ec1729"
 	ExamplePollIDAfterDeadline = "0d5edfad-ba7f-4ddc-a455-4f25ca09bfdd"
+	ExamplePollIDVotingStarted = "0d5edfad-ba7f-4ddc-a455-4f25ca09bfss"
 	ExampleOptionID1           = "65d7c012-f3f9-43f5-a62c-12ab516c6124"
 	ExampleOptionID2           = "b85b14b5-7da6-47d0-8518-07033e199a50"
 	ExampleOptionID3           = "b8168cce-4044-4c23-9506-b41915784166"
@@ -62,6 +63,7 @@ func (p MockPollModel) Get(id string) (*Poll, error) {
 			ResultsVisibility: "after_vote",
 		}, nil
 	}
+
 	// results after deadline
 	if id == ExamplePollIDAfterDeadline {
 		return &Poll{
@@ -128,5 +130,11 @@ func (p MockPollOptionModel) Vote(optionID string, pollID string, ip string) err
 }
 
 func (p MockPollOptionModel) GetResults(pollID string) ([]*PollOption, error) {
+	if pollID == ExamplePollIDVotingStarted {
+		return []*PollOption{
+			{ID: "1", Value: "One", Position: 0, VoteCount: 1},
+			{ID: "2", Value: "Two", Position: 1, VoteCount: 0},
+		}, nil
+	}
 	return nil, nil
 }
