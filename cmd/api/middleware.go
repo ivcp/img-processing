@@ -143,6 +143,31 @@ func (app *application) checkPollExpired(next http.Handler) http.Handler {
 	})
 }
 
+func (app *application) checkVoteStarted(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := app.pollIDfromContext(r.Context())
+
+		results, err := app.models.PollOptions.GetResults(id)
+		if err != nil {
+			app.serverErrorResponse(w, err)
+			return
+		}
+		votingStarted := false
+		for _, option := range results {
+			if option.VoteCount > 0 {
+				votingStarted = true
+			}
+		}
+
+		if votingStarted {
+			app.cannotEditResponse(w)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Access-Control-Request-Method")

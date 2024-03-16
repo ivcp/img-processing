@@ -128,6 +128,32 @@ func Test_app_checkPollExpired(t *testing.T) {
 	}
 }
 
+func Test_app_checkVoteStarted(t *testing.T) {
+	tests := []struct {
+		name           string
+		pollID         string
+		expectedStatus int
+	}{
+		{"voting started", data.ExamplePollIDVotingStarted, http.StatusForbidden},
+		{"no votes yet", uuid.NewString(), http.StatusOK},
+	}
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handlerToTest := app.checkVoteStarted(nextHandler)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+			req = req.WithContext(context.WithValue(req.Context(), ctxPollIDKey, test.pollID))
+			rr := httptest.NewRecorder()
+			handlerToTest.ServeHTTP(rr, req)
+
+			if rr.Code != test.expectedStatus {
+				t.Errorf("expected status %d, but got %d", test.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
+
 func Test_app_enableCORS(t *testing.T) {
 	tests := []struct {
 		name      string

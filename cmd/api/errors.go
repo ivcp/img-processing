@@ -47,6 +47,11 @@ func (app *application) cannotVoteResponse(w http.ResponseWriter) {
 	app.errorJSONResponse(w, http.StatusForbidden, message)
 }
 
+func (app *application) cannotEditResponse(w http.ResponseWriter) {
+	message := "editing the poll is not permitted once voting has begun"
+	app.errorJSONResponse(w, http.StatusForbidden, message)
+}
+
 func (app *application) pollExpiredResponse(w http.ResponseWriter) {
 	message := "poll has expired"
 	app.errorJSONResponse(w, http.StatusForbidden, message)
