@@ -1,3 +1,5 @@
+# Polls
+
 Polls is a public JSON REST API that lets you create, view, edit, delete and vote on polls. Voting is limited to one vote per IP address per poll.
 Polls can be configured by setting expiry time, results visibility and private status. The API also provides the ability to list, search and sort public polls.
 
