@@ -218,7 +218,7 @@ Show results for poll.
 
 <hr>
 
-Token is required for following endpoints. Token is generated when a poll is created and must be included in the Authorization header.
+**Token is required for following endpoints.** Token is generated when a poll is created and must be included in the Authorization header.
 
 ### PATCH /v1/polls/{poll ID}
 
