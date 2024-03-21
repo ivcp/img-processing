@@ -396,3 +396,7 @@ Headers example:
 - Postgres
 - Docker
 - Caddy
+
+## Contributing
+
+If you'd like to contribute, please fork the repository and open a pull request to the `master` branch.
