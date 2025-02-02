@@ -5,9 +5,7 @@ Polls can be configured by setting expiry time, results visibility and private s
 
 ## Motivation
 
-I wanted to write an API that makes it simple for anyone to create polls and vote without need for user accounts or logins. My goals were also to implement IP based voting limitation, rate limiting, write tests, and deploy the API(to an EC2 instance in this case).
-
-I also made a [React app](https://github.com/ivcp/polls-frontend) that uses the Polls API. You can try it out at https://www.polls.ovh/
+I made this primarily for learning purposes. I wanted to write an API that makes it simple for anyone to create polls and vote without need for user accounts or logins. My goals were also to implement IP based voting limitation, rate limiting, write tests, and deploy the API(to an EC2 instance in this case).
 
 ## How to run locally
 
